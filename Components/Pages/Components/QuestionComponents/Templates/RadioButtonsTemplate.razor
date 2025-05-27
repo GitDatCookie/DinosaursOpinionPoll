@@ -1,0 +1,102 @@
+﻿@using AI_Project.Models
+@inject IQuestionService questionService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="pa-4">
+    <MudStack Row>
+        <MudSpacer/>
+        <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+    </MudStack>
+
+    <MudTextField @bind-Value="Title" Placeholder="Type in your Question..."></MudTextField>
+    <MudRadioGroup T="int" @bind-Value="SelectedOption">
+        @foreach (var option in EditableOptions.Select((name, index) => new { name, index }))
+        {
+            <MudRadio T="int" Value="@option.index" Style=@($"--mud-palette-action-default: {ComponentColour};") Class="me-2">
+                @* If the current button is being edited, show a TextField; otherwise, show the text *@
+                @if (EditIndex == option.index)
+                {
+                    <MudTextField @bind-Value="EditableOptions[option.index]" Immediate="true" Placeholder="Type in your Button Value ..." OnBlur="@(()=>FinishEditing())" />
+                }
+                else
+                {
+                    <MudText>
+                        @option.name
+                    </MudText>
+                }
+            </MudRadio>
+
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.index)" />
+            @if(EditableOptions.Count > RadioButtonMin)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(()=>RemoveOption(option.index))" />
+            }
+
+        }
+    </MudRadioGroup>
+
+    <MudGrid Class="d-flex pl-5 mt-6">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => AddOption("Radio"))">
+            Add Button
+        </MudButton>
+        <MudSpacer />
+        @if (!IsEditable)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                Save Question
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                Edit Question
+            </MudButton>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; }
+    public int RadioButtonMin { get; set; } = 2;
+    public int SelectedOption { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (ViewModel != null && ViewModel.Id != new Guid())
+        {
+            IsEditable = true;
+            EditableOptions = ViewModel.Answers;
+            Title = ViewModel.Title;
+            ComponentColour = ViewModel.ComponentColour;
+        }
+        else
+        {
+            EditableOptions = new List<string>() { "Radio 1", "Radio 2", "Radio 3" };
+        }
+
+    }
+
+    private void SaveQuestion()
+    {
+        QuestionViewModel question = new()
+            {
+                QuestionType = Enums.EQuestionType.RadioButton,
+                Title = Title,
+                Answers = EditableOptions,
+                ComponentColour = ComponentColour
+            };
+
+        SaveQuestionaireComponentModelAsync(question);
+    }
+
+    private async Task EditQuestion()
+    {
+        ViewModel.Title = Title;
+        ViewModel.Answers = EditableOptions;
+        ViewModel.ComponentColour = ComponentColour;
+
+        await EditQuestionaireComponentModelAsync(ViewModel);
+    }
+}

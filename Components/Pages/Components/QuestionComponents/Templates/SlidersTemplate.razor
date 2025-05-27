@@ -1,0 +1,122 @@
+﻿@using AI_Project.Models
+@inject IQuestionService questionService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="pa-4">
+
+    <MudStack Row>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+    </MudStack>
+
+
+    <MudTextField @bind-Value="Title" Placeholder="Type in your Question..." />
+
+    <!-- The slider using the dynamic tick mark labels -->
+    <MudItem Class="d-flex flex-column align-center mt-4">
+        <MudSlider TickMarks="true"
+        TickMarkLabels="@(SanitizedLabels.ToArray())"
+        Step="1"
+        @bind-Value="Value"
+        Min="SliderMin"
+        Max="EditableOptions.Count + 1"
+        Style=@($"width:85%; --mud-palette-primary:{ComponentColour};" ) />
+    </MudItem>
+
+    <MudDivider Class="mt-8 mb-4"/>
+
+    @foreach (var option in EditableOptions.Select((name, index) => new { Name = name, Index = index }))
+    {
+        <MudItem Class="d-flex align-items-center mb-8">
+            <MudStack Row=true Class="ml-4 me-2">
+                @if (EditIndex == option.Index)
+                {
+                    <!-- Editable text field for the label -->
+                    <MudTextField @bind-Value="EditableOptions[option.Index]" Immediate="true" OnBlur="@(() => FinishEditing())" />
+                }
+                else
+                {
+                    <MudText>
+                        @option.Name
+                    </MudText>
+                }
+            </MudStack>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.Index)" Class="ms-2" />
+            @if (EditableOptions.Count > SliderMin)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveOption(option.Index))" />
+            }
+        </MudItem>
+    }
+
+    <MudGrid Class="d-flex pl-5 mt-6">
+        @if (EditableOptions.Count < SliderMax)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=> AddOption("Label"))">
+                Add Label
+            </MudButton>
+        }
+        <MudSpacer />
+        @if (!IsEditable)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                Save Question
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                Edit Question
+            </MudButton>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = new();
+    private static int SliderMin { get; set; } = 2;
+    private int SliderMax { get; set; } = 15;
+
+    private int Value { get; set; } = 50;
+
+    private IEnumerable<string> SanitizedLabels => EditableOptions.Select(label => label.Replace(" ", "\u00A0"));
+
+    protected override void OnInitialized()
+    {
+        if (ViewModel != null && ViewModel.Id != new Guid())
+        {
+            IsEditable = true;
+            EditableOptions = ViewModel.Answers;
+            Title = ViewModel.Title;
+            ComponentColour = ViewModel.ComponentColour;
+        }
+        else
+        {
+            EditableOptions = new List<string> { "Label 1", "Label 2" };
+
+        }
+    }
+
+    private void SaveQuestion()
+    {
+        QuestionViewModel question = new()
+        {
+            QuestionType = Enums.EQuestionType.Slider,
+            Title = Title,
+            Answers = EditableOptions,
+            ComponentColour = ComponentColour
+        };
+        SaveQuestionaireComponentModelAsync(question);
+    }
+
+    private async Task EditQuestion()
+    {
+        ViewModel.Title = Title;
+        ViewModel.Answers = EditableOptions;
+        ViewModel.ComponentColour = ComponentColour;
+
+        await EditQuestionaireComponentModelAsync(ViewModel);
+    }
+}

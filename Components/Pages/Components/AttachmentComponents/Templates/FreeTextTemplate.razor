@@ -1,0 +1,75 @@
+﻿@page "/text"
+@using Ganss.Xss
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="d-flex flex-column pa-4">
+    <MudTextField @bind-Value="Title" Placeholder="Give your text a Title..." />
+    ﻿<MudStack Justify="Justify.FlexEnd" Row="true">
+        <MudButton OnClick="Reset" Size="Size.Small">Reset</MudButton>
+
+    </MudStack>
+    <MudHtmlEditor @ref=editor @bind-Html=@FreeText>
+        <MudHtmlToolbarOptions InsertImage="false" />
+    </MudHtmlEditor>
+    <MudGrid Class="d-flex pl-5 mt-6">
+        <MudSpacer />
+        @if (!IsEditable)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveText">
+                Save Text
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditText">
+                Edit Question
+            </MudButton>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code{
+    [Parameter]
+    public FreeTextViewModel ViewModel { get; set; }
+
+    public string test { get; set; } = "";
+
+    private MudHtmlEditor editor = default!;
+
+    protected override void OnInitialized()
+    {
+        if (ViewModel != null && ViewModel.Id != new Guid())
+        {
+            IsEditable = true;
+            Title = ViewModel.Title;
+            FreeText = ViewModel.FreeText;
+        }
+    }
+
+    private async Task Reset()
+    {
+        await editor.Reset();
+    }
+
+    private void SaveText()
+    {
+        var sanitiser = new HtmlSanitizer();
+        sanitiser.AllowedAttributes.Add("class");
+        FreeText = sanitiser.Sanitize(FreeText);
+
+        FreeTextViewModel text= new()
+            {
+                Title = Title,
+                FreeText = FreeText
+            };
+
+        SaveQuestionaireComponentModelAsync(text);
+    }
+
+    private async Task EditText()
+    {
+        ViewModel.Title = Title;
+
+        await EditQuestionaireComponentModelAsync(ViewModel);
+    }
+}

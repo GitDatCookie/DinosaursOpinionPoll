@@ -1,0 +1,85 @@
+﻿@using AI_Project.ViewModels
+@inject IQuestionService questionService
+@inject IDialogService dialogService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+@if (!IsEditable)
+{
+    <MudPaper Class="d-flex flex-column pa-4">
+        <!-- Display the question title -->
+        <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+
+        <!-- Display the star rating control with hoverable label text -->
+        <div class="d-flex flex-column align-center">
+            <MudRating @bind-SelectedValue="RatingValue"
+                       HoveredValueChanged="HandleHoveredValueChanged"
+                       MaxValue="@ViewModel.Answers.Count"
+                       RatingItemsStyle=@($"color:{ViewModel.ComponentColour}") />
+            <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">
+                @LabelText
+            </MudText>
+        </div>
+
+        @if (IsItemEditable)
+        {
+            <MudGrid Class="d-flex pl-5 mt-6">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => DeleteQuestionAsync())">
+                    Delete Question
+                </MudButton>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => IsEditable = true)" Class="ml-5">
+                    Edit Question
+                </MudButton>
+            </MudGrid>
+        }
+    </MudPaper>
+}
+else
+{
+    <!-- When editable, use your star rating edit template -->
+    <StarRatingsTemplate ViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
+}
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = null!;
+
+    [Parameter]
+    public bool IsItemEditable { get; set; }
+
+    // Internally, we store the selected star as a zero-based index.
+    private int selectedVal = 0;
+
+    // Expose a 1-based property for binding with MudRating.
+    private int RatingValue
+    {
+        get => selectedVal + 1;
+        set => selectedVal = value - 1;
+    }
+
+    // Holds the currently hovered star value (converted to a zero-based index).
+    private int? activeVal;
+    private void HandleHoveredValueChanged(int? val)
+    {
+        activeVal = val.HasValue ? val.Value - 1 : null;
+    }
+
+    // Computes the label to display under the star rating.
+    // It uses the hovered star if available; otherwise the selected star.
+    private string LabelText =>
+         (activeVal ?? selectedVal) is int idx && idx >= 0 && idx < ViewModel.Answers.Count
+            ? ViewModel.Answers[idx]
+            : "Rate our product!";
+
+    // Called when the edit template finishes editing.
+    private void HandleQuestionEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private async Task DeleteQuestionAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EItemType.Question, EQuestionType.StarRating);
+    }
+}

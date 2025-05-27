@@ -1,0 +1,51 @@
+﻿@using AI_Project.ViewModels
+@inject IQuestionService questionService
+@inject IDialogService dialogService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+@if (!IsEditable)
+{
+    <MudPaper  Class="d-flex flex-column pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+        @foreach (var answer in ViewModel.Answers)
+        {
+            <MudRadio T="int" Disabled="false" Style=@($"--mud-palette-action-default: {ViewModel.ComponentColour};")>
+                <MudText T="string">@answer</MudText>
+            </MudRadio>
+        }
+        @if (IsItemEditable)
+        {
+            <MudGrid Class="d-flex pl-5 mt-6">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteQuestionAsync())">
+                    Delete Question
+                </MudButton>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
+                    Edit Question
+                </MudButton>
+            </MudGrid>
+        }
+    </MudPaper>
+}
+else
+{
+    <RadioButtonsTemplate ViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
+}
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = null!;
+
+    [Parameter]
+    public bool IsItemEditable { get; set; }
+
+    private void HandleQuestionEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private async Task DeleteQuestionAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EItemType.Question, EQuestionType.RadioButton);
+    }
+}

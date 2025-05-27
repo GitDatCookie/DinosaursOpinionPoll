@@ -1,0 +1,61 @@
+﻿@inject IUserService userService
+@inject IDialogService dialogService
+
+<MudAppBar Elevation="0" Style="@($"color:{headerTextColour}; background:{headerBackground}; border-bottom:{headerBorder}")">
+        <LogoHeader />
+        @*         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" /> *@
+        <MudText Typo="Typo.h5" Class="ml-3">Dinosaurs Opinion Poll </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
+        <MudIconButton Icon="@Icons.Material.Filled.Login" Color="Color.Inherit" OnClick="@OpenDialogAsync" />
+        <AuthorizeView>
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" Edge="Edge.End" OnClick="Logout" />
+        </AuthorizeView>
+
+</MudAppBar>
+
+@code {
+    [Parameter] 
+    public bool IsDarkMode { get; set; } = true;
+    [Parameter]
+    public EventCallback<bool> IsDarkModeChanged { get;set; }
+
+    private string headerBackground => IsDarkMode switch
+    {
+        true => Colors.Purple.Darken4,
+        false => Colors.Shades.White
+    };
+    private string headerTextColour => IsDarkMode switch
+    {
+        true => Colors.Shades.White,
+        false => Colors.Purple.Darken4
+    };
+    private string headerBorder => IsDarkMode switch
+    {
+        true => "",
+        false => $"1px solid {Colors.Purple.Lighten5}"
+    };
+    private string DarkLightModeButtonIcon => IsDarkMode switch
+    {
+        true => Icons.Material.Filled.LightMode,
+        false => Icons.Material.Outlined.DarkMode,
+    };
+
+    private void Logout()
+    {
+        userService.LogoutUser();
+    }
+
+    private async Task DarkModeToggle()
+    {
+        IsDarkMode = !IsDarkMode;
+        await IsDarkModeChanged.InvokeAsync(IsDarkMode);
+    }
+
+    private Task OpenDialogAsync()
+    {
+        DialogOptions options = new DialogOptions() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true, Position = DialogPosition.Center, CloseButton = true };
+        return dialogService.ShowAsync<LoginDialogueComponent>("Login", options);
+    }
+
+}

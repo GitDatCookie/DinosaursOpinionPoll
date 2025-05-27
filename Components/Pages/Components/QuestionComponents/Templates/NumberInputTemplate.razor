@@ -1,0 +1,73 @@
+﻿<MudPaper  Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-4">NumberField Question.</MudText>
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Set your Question.</MudText>
+    <MudTextField @bind-Value="QuestionValue" Label="Question" Variant="Variant.Text" Placeholder="Type in your Question..."></MudTextField>
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Configure your Textfield.</MudText>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the label.</MudText>
+    <MudTextField @bind-Value="LabelValue" Label="Label" Variant="Variant.Text" Placeholder="Type in Textfields Label..."></MudTextField>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the input type.</MudText>
+    <MudSelect T="string" @bind-Value="NumberType" Label="Number Type" Variant="Variant.Text" Placeholder="Choose a number type...">
+        <MudSelectItem Value="@("Round Number")">Round Number</MudSelectItem>
+        <MudSelectItem Value="@("Decimal")">Decimal</MudSelectItem>
+    </MudSelect>
+
+    @switch (NumberType)
+    {
+        case "Round Number":
+            <MudNumericField T="int" @bind-Value="minInt" Label="Min Value" Variant="QuestionOutline" Class="mt-2" />
+            <MudNumericField T="int" @bind-Value="maxInt" Label="Max Value" Variant="QuestionOutline" Class="mt-2" />
+            break;
+        case "Decimal":
+            <MudNumericField T="decimal" @bind-Value="minDecimal" Label="Min Value" Variant="QuestionOutline" Class="mt-2" />
+            <MudNumericField T="decimal" @bind-Value="maxDecimal" Label="Max Value" Variant="QuestionOutline" Class="mt-2" />
+            break;
+        default:
+            break;
+    }
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the look.</MudText>
+    <MudChipSet T="Variant" @bind-SelectedValue="QuestionOutline" CheckMark SelectionMode="SelectionMode.SingleSelection">
+        <MudChip Variant=Variant.Text Color="Color.Primary" Value="@Variant.Text">Clean</MudChip>
+        <MudChip Variant=Variant.Filled  Color="Color.Primary" Value="@Variant.Filled">Filled</MudChip>
+        <MudChip Variant=Variant.Outlined  Color="Color.Primary" Value="@Variant.Outlined">Outlined</MudChip>
+    </MudChipSet>
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Save the result.</MudText>
+
+    @switch(NumberType)
+    {
+        case "Round Number":
+            <MudNumericField T="int" Label="LabelValue" Variant="QuestionOutline" Min="minInt" Max="maxInt" />
+            break;
+        case "Decimal":
+            <MudNumericField T="decimal" Label="LabelValue" Variant="QuestionOutline" Min="minDecimal" Max="maxDecimal" />
+            break;
+        default:
+            break;
+    }
+</MudPaper>
+
+
+@code
+{
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = new();
+
+    public string QuestionValue { get; set; }
+    public string NumberType { get; set; }
+    public string AnswerValue { get; set; }
+    public string LabelValue { get; set; }
+    public Variant QuestionOutline { get; set; }
+
+    // Values for int type.
+    private int minInt { get; set; }
+    private int maxInt { get; set; }
+
+    // Values for decimal type.
+    private decimal minDecimal { get; set; }
+    private decimal maxDecimal { get; set; }
+}

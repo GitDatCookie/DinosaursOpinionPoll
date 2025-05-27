@@ -1,0 +1,103 @@
+﻿@inject IQuestionService questionService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+<MudPaper  Class="d-flex flex-column pa-4">
+
+    <MudStack Row>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+    </MudStack>
+
+    <MudTextField @bind-Value="Title" Placeholder="Type in your Question..." />
+
+    @foreach (var option in EditableOptions.Select((name, index) => new { Name = name, Index = index }))
+    {
+        <MudItem Class="d-flex align-items-center mb-2">
+            <div>
+                <MudCheckBox T=string Disabled="false" Class="me-2" Style=@($"--mud-palette-action-default: {ComponentColour};")>
+                    @if (EditIndex == option.Index)
+                    {
+                        <MudTextField @bind-Value="EditableOptions[option.Index]" Immediate="true" OnBlur="@(() => FinishEditing())" />
+                    }
+                    else
+                    {
+                        <MudText>
+                            @option.Name
+                        </MudText>
+                    }
+                </MudCheckBox>
+            </div>
+
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.Index)" />
+            @if(EditableOptions.Count > CheckBoxMin)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveOption(option.Index))" />
+            }
+        </MudItem>
+    }
+    <MudGrid Class="d-flex pl-5 mt-6">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() =>AddOption("Checkbox"))" Class="ml-5">
+            Add Checkbox
+        </MudButton>
+        <MudSpacer/>
+        @if (!IsEditable)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                Save Question
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                Edit Question
+            </MudButton>
+        }
+    </MudGrid>
+
+</MudPaper>
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; }
+
+    public int CheckBoxMin { get; set; } = 1;
+
+    protected override void OnInitialized()
+    {
+        if (ViewModel != null && ViewModel.Id != new Guid())
+        {
+            IsEditable = true;
+            EditableOptions = ViewModel.Answers;
+            Title = ViewModel.Title;
+            ComponentColour = ViewModel.ComponentColour;
+        }
+        else
+        {
+            EditableOptions = new List<string> { "Checkbox 1", "Checkbox 2", "Checkbox 3" };
+        }
+
+    }
+
+    private void SaveQuestion()
+    {
+        QuestionViewModel question = new()
+        {
+            QuestionType = Enums.EQuestionType.CheckBox,
+            Title = Title,
+            Answers = EditableOptions,
+            ComponentColour = ComponentColour
+        };
+
+        SaveQuestionaireComponentModelAsync(question);
+    }
+
+    private async Task EditQuestion()
+    {
+        ViewModel.Title = Title;
+        ViewModel.Answers = EditableOptions;
+        ViewModel.ComponentColour = ComponentColour;
+
+        await EditQuestionaireComponentModelAsync(ViewModel);
+    }
+}

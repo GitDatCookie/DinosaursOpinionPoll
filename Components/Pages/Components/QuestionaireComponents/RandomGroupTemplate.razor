@@ -1,0 +1,175 @@
+﻿@using AI_Project.Models.OrderModels
+@using MudBlazor
+
+@if (!isEditing)
+{
+    <MudStack Row Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Spacing="2">
+        <MudCheckBox T="bool" @bind-Value="IsRandom" Label="Randomise?" />
+
+        @if (IsRandom)
+        {
+            <MudSelect T="RandomGroupViewModel" @bind-Value="SelectedRandomGroup" Variant="Variant.Outlined" Label="Group">
+                @foreach (var group in RandomGroups)
+                {
+                    <MudSelectItem Value="@group">
+                        <MudStack Row AlignItems="AlignItems.Center" Style="width:100%;">
+                            <span>@group.GroupName</span>
+                            <MudSpacer />
+                            @if (SelectedRandomGroup != group)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                Size="Size.Small"
+                                OnClick="@(() => StartEditingGroup(group))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                Size="Size.Small"
+                                OnClick="@(() => DeleteGroup(group))"
+                                Color="Color.Error" />
+                            }
+                        </MudStack>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            <MudIconButton Icon="@Icons.Material.Filled.Add"
+            Size="Size.Small"
+            OnClick="AddNewGroup"
+            Color="Color.Primary" />
+        }
+    </MudStack>
+}
+else
+{
+    <MudStack Row Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Spacing="2">
+        <MudTextField T="string"
+        @bind-Value="editedGroupName"
+        Label="Edit Group"
+        Immediate="true"
+        AutoFocus="true"
+        Class="ml-8" />
+        <MudIconButton Icon="@Icons.Material.Filled.Save"
+        Size="Size.Small"
+        OnClick="SaveEditedGroup" />
+        <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+        Size="Size.Small"
+        OnClick="CancelEditingGroup"
+        Color="Color.Error" />
+    </MudStack>
+}
+
+@code {
+    [Parameter]
+    public QuestionaireComponentViewModelBase ViewModel { get; set; }
+
+    [Parameter]
+    public QuestionairePageViewModel PageViewModel { get; set; }
+
+    [Parameter]
+    public ERandomGroupType RandomGroupType { get; set; }
+
+    [Parameter]
+    public List<RandomGroupViewModel> RandomGroups { get; set; }
+
+    [Parameter]
+    public EventCallback<List<RandomGroupViewModel>> RandomGroupsChanged { get; set; }
+
+    public RandomGroupViewModel SelectedRandomGroup { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        if (RandomGroups?.Count != 0)
+        {
+            RandomGroupViewModel randomGroup = new()
+            {
+                GroupName = "Group 1",
+                RandomGroupType = RandomGroupType
+            };
+            RandomGroups = new();
+            RandomGroups.Add(randomGroup);
+            SelectedRandomGroup = randomGroup;
+        }
+    }
+
+    private bool IsRandom { get; set; }
+    private string randomGroup { get; set; }
+
+
+    private bool isEditing = false;
+    private RandomGroupViewModel? editingGroup = null;
+    private string editedGroupName { get; set; } = string.Empty;
+
+    // Called when the user clicks the edit icon on an item.
+    // Switches to edit mode and pre-populates the editing field.
+    private void StartEditingGroup(RandomGroupViewModel group)
+    {
+        isEditing = true;
+        editingGroup = group;
+        editedGroupName = group.GroupName;
+    }
+
+    // Called when the Save icon is pressed during edit mode.
+    // Updates the group name (if any changes) and reverts to normal mode.
+    private void SaveEditedGroup()
+    {
+        if (editingGroup is not null && !string.IsNullOrWhiteSpace(editedGroupName))
+        {
+            int index = RandomGroups.IndexOf(editingGroup);
+
+            if (index != -1)
+            {
+                // Update the group name in the list.
+                RandomGroups[index].GroupName = editedGroupName;
+                // Also update the SelectedRandomGroup if it is the one being edited.
+                if (SelectedRandomGroup == editingGroup)
+                {
+                    SelectedRandomGroup = RandomGroups[index];
+                }
+            }
+        }
+        ExitEditingMode();
+        RandomGroupsChanged.InvokeAsync(RandomGroups);
+    }
+
+    // Called when the Delete icon is pressed during normal mode for an item.
+    // If that group is currently being edited, editing mode is also canceled.
+    private void DeleteGroup(RandomGroupViewModel group)
+    {
+        if (RandomGroups.Contains(group))
+        {
+            RandomGroups.Remove(group);
+            if (SelectedRandomGroup == group)
+            {
+                SelectedRandomGroup = new();
+            }
+        }
+        if (editingGroup == group)
+        {
+            ExitEditingMode();
+        }
+        RandomGroupsChanged.InvokeAsync(RandomGroups);
+    }
+
+    // Cancels editing – no changes are saved.
+    private void CancelEditingMode() => ExitEditingMode();
+
+    // Reset the edit mode state.
+    private void ExitEditingMode()
+    {
+        isEditing = false;
+        editingGroup = null;
+        editedGroupName = string.Empty;
+    }
+
+    // Shortcut handler for the Cancel icon in edit mode.
+    private void CancelEditingGroup() => CancelEditingMode();
+
+    // Called when the plus button is clicked.
+    // Creates a new group with a default name and immediately enters edit mode.
+    private void AddNewGroup()
+    {
+        // Create a new group model with a default name.
+        var newGroup = new RandomGroupViewModel { GroupName = $"Group {RandomGroups.Count + 1}" };
+        RandomGroups.Add(newGroup);
+        SelectedRandomGroup = newGroup;
+        StartEditingGroup(newGroup);
+        RandomGroupsChanged.InvokeAsync(RandomGroups);
+    }
+}

@@ -1,0 +1,142 @@
+﻿@inject IQuestionService questionService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="pa-4">
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Set your Question.</MudText>
+    <MudTextField @bind-Value="QuestionValue" Label="Question" Variant="Variant.Text" Placeholder="Type in your Question..."></MudTextField>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the placeholder.</MudText>
+    <MudTextField @bind-Value="LabelValue" Label="Label" Variant="Variant.Text" Placeholder="Type in Label Value..."></MudTextField>
+
+    <!-- Dropdown using sorted items -->
+    <MudSelect Label="@LabelValue" @bind-Value="value">
+        @foreach (var item in SortedItems)
+        {
+            <MudSelectItem Value="@item">@item</MudSelectItem>
+        }
+    </MudSelect>
+
+    <!-- Input to add new items -->
+    <MudTextField @bind-Value="newItem" Label="New Item" Class="mt-4" />
+    <MudButton OnClick="AddItem" Color="Color.Primary" Class="ml-2 mt-4">Add</MudButton>
+
+    <!-- Display the items as a list with inline edit and delete buttons -->
+    <MudList T="string" Class="mt-4">
+        @foreach (var item in SortedItems)
+        {
+            <MudListItem>
+                <div class="d-flex align-items-center w-100">
+                    <div class="flex-grow-1">
+                        @if (editingItem == item)
+                        {
+                            <!-- Inline editing: when the item is in edit mode -->
+                            <MudTextField @bind-Value="editText" Immediate="true" />
+                        }
+                        else
+                        {
+                            <!-- Display the item text -->
+                            <span>@item</span>
+                        }
+                    </div>
+                    @if (editingItem == item)
+                    {
+                        <!-- Save and Cancel buttons while editing -->
+                        <MudButton OnClick="@(() => SaveEdit(item))" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="me-2">
+                            Save
+                        </MudButton>
+                        <MudButton OnClick="CancelEdit" Color="Color.Secondary" Variant="Variant.Text" Size="Size.Small" Class="me-2">
+                            Cancel
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <!-- Edit button when not editing -->
+                        <MudButton OnClick="@(() => StartEdit(item))" Variant="Variant.Outlined" Size="Size.Small" Class="me-2">
+                            Edit
+                        </MudButton>
+                    }
+                    <!-- Delete button is always available -->
+                    <MudButton OnClick="@(() => DeleteItem(item))" Color="Color.Error" Variant="Variant.Outlined" Size="Size.Small">
+                        Delete
+                    </MudButton>
+                </div>
+            </MudListItem>
+        }
+    </MudList>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = new();
+    // Value bound to the MudSelect
+    private string value { get; set; }
+
+    public string QuestionValue { get; set; }
+    public string LabelValue { get; set; }
+    // List of items shown in both the select and the list.
+    private List<string> selectionValues = new List<string>();
+
+    // New Item text from the MudTextField.
+    private string newItem;
+
+    // For inline editing:
+    // Tracks which item is being edited (the actual string value).
+    private string editingItem;
+    // Holds the temporary edit value.
+    private string editText;
+
+    // Automatically order the list in ascending order.
+    private IEnumerable<string> SortedItems => selectionValues.OrderBy(x => x);
+
+    // Adds a new item to the list if the newItem is not empty.
+    private void AddItem()
+    {
+        if (!string.IsNullOrWhiteSpace(newItem))
+        {
+            selectionValues.Add(newItem);
+            newItem = string.Empty;
+        }
+    }
+
+    // Starts editing the specified item.
+    private void StartEdit(string item)
+    {
+        editingItem = item;
+        editText = item;
+    }
+
+    // Cancels the current editing operation.
+    private void CancelEdit()
+    {
+        editingItem = null;
+        editText = string.Empty;
+    }
+
+    // Saves the edit for the specified original item.
+    private void SaveEdit(string originalItem)
+    {
+        if (!string.IsNullOrWhiteSpace(editText))
+        {
+            int index = selectionValues.FindIndex(x => x == originalItem);
+            if (index != -1)
+            {
+                selectionValues[index] = editText;
+            }
+        }
+        editingItem = null;
+        editText = string.Empty;
+    }
+
+    // Deletes the given item from the list.
+    private void DeleteItem(string item)
+    {
+        if (editingItem == item)
+        {
+            editingItem = null;
+            editText = string.Empty;
+        }
+        selectionValues.Remove(item);
+    }
+}

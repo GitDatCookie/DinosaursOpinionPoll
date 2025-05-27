@@ -1,0 +1,44 @@
+﻿@inherits QuestionaireComponentBase
+
+@if (!IsEditable)
+{
+    <MudPaper Class="d-flex flex-column pa-4">
+        <MudHtmlViewer Html="@ViewModel.FreeText"/>
+        @if (IsItemEditable)
+        {
+            <MudGrid Class="d-flex pl-5 mt-6">
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteTextAsync())">
+                    Delete Text
+                </MudButton>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
+                    Edit Text
+                </MudButton>
+            </MudGrid>
+        }
+
+    </MudPaper>
+}
+else
+{
+    <FreeTextTemplate ViewModel="ViewModel" OnItemEdited="HandleItemEdited" />
+}
+
+
+@code {
+    [Parameter]
+    public FreeTextViewModel ViewModel { get; set; } = null!;
+
+    [Parameter]
+    public bool IsItemEditable { get; set; }
+
+    private void HandleItemEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private async Task DeleteTextAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EItemType.FreeText, EQuestionType.None);
+    }
+}

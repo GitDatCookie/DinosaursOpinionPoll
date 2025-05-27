@@ -1,0 +1,46 @@
+﻿<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-4">MultiLine TextField Question.</MudText>
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Set your Question.</MudText>
+    <MudTextField @bind-Value="QuestionValue" Label="Question" Variant="Variant.Text" Placeholder="Type in your Question..."></MudTextField>
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Configure your Textfield.</MudText>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the label.</MudText>
+    <MudTextField @bind-Value="LabelValue" Label="Label" Variant="Variant.Text" Placeholder="Type in Textfields Label..."></MudTextField>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the placeholder.</MudText>
+    <MudTextField @bind-Value="PlaceHolderValue" Label="PlaceHolder" Variant="Variant.Text" Placeholder="Type in Placeholders Value..."></MudTextField>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the helper text.</MudText>
+    <MudTextField @bind-Value="HelperTextValue" Label="PlaceHolder" Variant="Variant.Text" Placeholder="Type in Placeholders Value..."></MudTextField>
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the rows before scrolling starts.</MudText>
+    <MudNumericField @bind-Value="MaxLinesValue" Label="1-10" Variant="Variant.Text" Min="1" Max="10" />
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the look.</MudText>
+    <MudChipSet T="Variant" @bind-SelectedValue="QuestionOutline" CheckMark SelectionMode="SelectionMode.SingleSelection">
+        <MudChip Variant=Variant.Text Color="Color.Primary" Value="@Variant.Text">Clean</MudChip>
+        <MudChip Variant=Variant.Filled Color="Color.Primary" Value="@Variant.Filled">Filled</MudChip>
+        <MudChip Variant=Variant.Outlined Color="Color.Primary" Value="@Variant.Outlined">Outlined</MudChip>
+    </MudChipSet>
+
+    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Save the result.</MudText>
+
+    <MudTextField @bind-Value="AnswerValue" Label="@LabelValue" Variant="@QuestionOutline" Placeholder="@PlaceHolderValue" AutoGrow MaxLines="@MaxLinesValue" HelperText="@HelperTextValue" />
+</MudPaper>
+
+
+@code
+{
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = new();
+
+    public string QuestionValue { get; set; }
+    public string PlaceHolderValue { get; set; }
+    public string AnswerValue { get; set; }
+    public string LabelValue { get; set; }    
+    public string HelperTextValue { get; set; }
+    public Variant QuestionOutline { get; set; }
+    public int MaxLinesValue { get; set; } = 1;
+}

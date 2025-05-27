@@ -1,0 +1,132 @@
+﻿@using AI_Project.Models
+@inject IQuestionService questionService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="d-flex flex-column pa-4">
+    <MudStack Row>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+    </MudStack>
+
+    <MudTextField @bind-Value="Title" Placeholder="Type in your Question..." />
+
+    <MudItem Class="d-flex flex-column align-center mt-4">
+        <MudRating @bind-SelectedValue="RatingValue" HoveredValueChanged="HandleHoveredValueChanged" MaxValue="@EditableOptions.Count" RatingItemsStyle=@($"color:{ComponentColour}")/>
+        <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">@LabelText</MudText>
+    </MudItem>
+
+    <MudDivider Class="my-4" />
+
+    @foreach (var option in EditableOptions.Select((name, index) => new { Name = name, Index = index }))
+    {
+        <MudItem Class="d-flex align-items-center mb-8">
+            <MudStack Row=true Class="ml-4 me-2">
+                <MudIcon Icon="@Icons.Material.Filled.StarRate" />
+                @if (EditIndex == option.Index)
+                {
+                    <MudTextField Class="me-2" @bind-Value="EditableOptions[option.Index]" Immediate="true" OnBlur="@(() => FinishEditing())" />
+                }
+                else
+                {
+                    <MudText>@option.Name</MudText>
+                }
+            </MudStack>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.Index)" />
+            @if (EditableOptions.Count > MinStars)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveOption(option.Index))" />
+            }
+        </MudItem>
+    }
+
+    <MudGrid Class="d-flex pl-5 mt-6">
+        @if (EditableOptions.Count < MaxStars)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>AddOption("Star"))" Class="ml-5">
+                Add Star
+            </MudButton>
+        }
+        <MudSpacer />
+        @if (!IsEditable)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                Save Question
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                Edit Question
+            </MudButton>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = new();
+
+    private int selectedVal = 0;
+
+    private int RatingValue
+    {
+        get => selectedVal + 1;
+        set => selectedVal = value - 1;
+    }
+
+    private int? activeVal;
+
+    private const int MinStars = 2;
+    private const int MaxStars = 10;
+
+    private string LabelText =>
+        (activeVal ?? selectedVal) is int idx && idx >= 0 && idx < EditableOptions.Count
+            ? EditableOptions[idx]
+            : "Rate our product!";
+
+    protected override void OnInitialized()
+    {
+        if (ViewModel != null && ViewModel.Id != Guid.Empty)
+        {
+            IsEditable = true;
+            EditableOptions = ViewModel.Answers;
+            Title = ViewModel.Title;
+            ComponentColour = ViewModel.ComponentColour;
+        }
+        else
+        {
+            EditableOptions = new List<string> { "Bad", "Good" };
+        }
+    }
+
+    private void HandleHoveredValueChanged(int? val)
+    {
+        if (val.HasValue)
+            activeVal = val.Value - 1;
+        else
+            activeVal = null;
+    }
+
+    private void SaveQuestion()
+    {
+        QuestionViewModel question = new()
+            {
+                QuestionType = Enums.EQuestionType.StarRating,
+                Title = Title,
+                Answers = EditableOptions,
+                ComponentColour = ComponentColour
+            };
+
+        SaveQuestionaireComponentModelAsync(question);
+    }
+
+    private async Task EditQuestion()
+    {
+        ViewModel.Title = Title;
+        ViewModel.Answers = EditableOptions;
+        ViewModel.ComponentColour = ComponentColour;
+
+        await EditQuestionaireComponentModelAsync(ViewModel);
+    }
+}

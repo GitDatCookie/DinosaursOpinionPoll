@@ -1,0 +1,28 @@
+﻿<MudText Typo="Typo.h6" Class="mb-4">@Question</MudText>
+
+<!-- Dropdown using sorted items -->
+<MudSelect @bind-Value="ChoosenDropDownItem">
+    @foreach (var item in DropDownItems)
+    {
+        <MudSelectItem Value="@item">@item</MudSelectItem>
+    }
+</MudSelect>
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = new();
+    [Parameter]
+    public bool IsItemEditable { get; set; }
+
+    [Parameter]
+    public string Question { get; set; } = null!;
+
+    [Parameter]
+    public List<string> DropDownItems { get; set; } = null!;
+
+    [Parameter]
+    public string ChoosenDropDownItem { get; set; } = null!;
+}
+
+
+

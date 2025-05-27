@@ -1,0 +1,68 @@
+﻿@page "/"
+@using AI_Project.Services
+@inject IEventNotificationService NotificationService
+
+@implements IDisposable
+
+<MudDrawer ClipMode="DrawerClipMode.Always" Elevation="2" Open="true">
+    <MudList T="string">
+        <DrawerBaseComponent IsTemplate="true" OnTemplateSelected="OnTemplateSelected"/>
+        <DrawerBaseComponent OnItemSelected="OnItemHandled"/>
+    </MudList>
+</MudDrawer>
+<MudContainer>
+
+    @if(renderItem)
+    {
+        <DynamicComponentComponent 
+        ItemType="@returnItem.Item2" 
+        QuestionType="@returnItem.Item3" 
+        ViewModel="@returnItem.Item1"
+        IsItemEditable="true" />
+    }
+    @if(renderTemplate)
+    {
+        <DynamicTemplateComponent ItemType="returnTemplate.ItemType" QuestionType="returnTemplate.QuestionType"/>
+    }
+</MudContainer>
+@code {
+    private bool renderItem = false;
+    private bool renderTemplate = false;
+
+    private (QuestionaireComponentViewModelBase ViewModel, EItemType ItemType, EQuestionType QuestionType) returnItem;
+    private (EItemType ItemType, EQuestionType QuestionType) returnTemplate;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        NotificationService.ContainerReset += ResetContainer;
+    }
+
+    private void ResetContainer()
+    {
+        renderItem = false;
+        renderTemplate = false;
+        StateHasChanged();
+    }
+
+    private void OnItemHandled((QuestionaireComponentViewModelBase, EItemType, EQuestionType)selectedItem)
+    {
+        returnItem = selectedItem;
+        renderTemplate = false;
+        renderItem = true;
+        StateHasChanged();
+    }
+
+    private void OnTemplateSelected((EItemType, EQuestionType) selectedTemplate)
+    {
+        returnTemplate = selectedTemplate;
+        renderItem = false;
+        renderTemplate = true;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NotificationService.ContainerReset -= ResetContainer;
+    }
+}

@@ -1,0 +1,57 @@
+﻿@inject IQuestionService questionService
+@inject IDialogService dialogService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+@if (!IsEditable)
+{
+    <MudPaper Class="d-flex flex-column pa-4">
+        <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+
+        <MudStack >
+            <MudItem Class="d-flex flex-column align-center mt-4">
+                <MudSlider TickMarks="true"
+                           TickMarkLabels="@(ViewModel.Answers.ToArray())"
+                           Step="1"
+                           Style=@($"width:85%; --mud-palette-primary:{ViewModel.ComponentColour};" )
+                           Max="ViewModel.Answers.Count() - 1" />
+            </MudItem>
+            <MudSpacer />
+            <MudSpacer />
+            <MudSpacer />
+            @if (IsItemEditable)
+            {
+                <MudGrid Class="d-flex pl-5 mt-6">
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteQuestionAsync())">
+                        Delete Question
+                    </MudButton>
+                    <MudSpacer />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
+                        Edit Question
+                    </MudButton>
+                </MudGrid>
+            }
+        </MudStack>
+    </MudPaper>
+}
+else
+{
+    <SlidersTemplate ViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
+}
+
+@code {
+    [Parameter]
+    public QuestionViewModel ViewModel { get; set; } = null!;
+
+    [Parameter]
+    public bool IsItemEditable { get; set; }
+
+    private void HandleQuestionEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private async Task DeleteQuestionAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EItemType.Question, EQuestionType.Slider);
+    }
+}

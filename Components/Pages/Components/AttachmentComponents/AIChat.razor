@@ -1,0 +1,91 @@
+﻿@page "/chat"
+@using AI_Project.Services
+@inject IAIService aiService
+
+<MudPaper Class="p-4 chat-container">
+    <MudStack>
+        @foreach (var message in _messages)
+        {
+            <MudChat Color="MudBlazor.Color.Default" Elevation=0 Dense="true"  Variant="Variant.Text" ChatPosition="@message.ChatPosition">
+                <MudChatHeader Name="@message.DisplayName" Time="@message.Timestamp.ToShortTimeString()" />
+                @if (message.IsLoading)
+                {
+                    <MudChatBubble Color="@message.BubbleColor">
+                        <MudSkeleton Animation="Animation.Wave" SkeletonType="SkeletonType.Text" Width="400px"/>
+                    </MudChatBubble>
+
+                }
+                else
+                {
+                    <MudChatBubble Color="@message.BubbleColor">@message.Text</MudChatBubble>
+                }
+            </MudChat>
+        }
+
+    </MudStack>
+    <MudStack Row AlignItems="AlignItems.Center" Class="mx-4" >
+        <MudTextField 
+        Class="flex-grow" 
+        Placeholder="Type your message..." 
+        @bind-Value="_userInput" 
+        Immediate="true"  />
+        <MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Primary" OnClick="HandleUserMessage" />
+    </MudStack>
+</MudPaper>
+
+@code {
+    private string _userInput = string.Empty; // User input
+    private List<ChatMessage> _messages = new List<ChatMessage>(); // Chat messages
+
+
+
+    private async void HandleUserMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(_userInput))
+        {
+            // Add the user's message
+            _messages.Add(new ChatMessage
+                {
+                    IsUser = true,
+                    Text = _userInput,
+                    Timestamp = DateTime.Now
+                });
+
+            // Add a loading message for the LM
+            var loadingMessage = new ChatMessage
+                {
+                    IsUser = false,
+                    Text = string.Empty,
+                    Timestamp = DateTime.Now,
+                    IsLoading = true
+                };
+            _messages.Add(loadingMessage);
+
+            // Simulate the LM's response
+            await HandleLanguageModelResponse(loadingMessage);
+            _userInput = string.Empty;
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleLanguageModelResponse(ChatMessage loadingMessage)
+    {
+        var response = await aiService.GetAnswerAsync((_userInput));
+
+        // Update the loading message with the actual response
+        loadingMessage.Text = response;
+        loadingMessage.IsLoading = false;
+    }
+
+    private class ChatMessage
+    {
+        public bool IsUser { get; set; }
+        public string Text { get; set; }
+        public DateTime Timestamp { get; set; }
+        public bool IsLoading { get; set; } // Indicates loading state
+        public ChatBubblePosition ChatPosition => IsUser ? ChatBubblePosition.End : ChatBubblePosition.Start;
+        public string DisplayName => IsUser ? "User" : "Language Model";
+        public MudBlazor.Color BubbleColor => IsUser ? MudBlazor.Color.Primary : MudBlazor.Color.Default;
+    }
+}

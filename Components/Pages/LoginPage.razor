@@ -1,0 +1,43 @@
+﻿@page "/Login"
+@inject IUserService userService
+@inject ISnackbar snackbar
+@inject NavigationManager navigationManager
+
+<EditForm Model="model" OnValidSubmit="OnValidSubmit">
+    <MudItem xs="12" sm="7">
+        <MudCard>
+            <MudCardContent>
+                <MudTextField Label="User name" HelperText="Choose a user name"
+                @bind-Value="model.UserName" For="@(() => model.UserName)"/>
+                <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
+                @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password"/>
+            </MudCardContent>
+            <MudCardActions>
+                @if (!string.IsNullOrEmpty(model.Password) && !string.IsNullOrEmpty(model.UserName))
+                {
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Login</MudButton>
+                }
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</EditForm>
+@code {
+    AdminUserViewModel model = new AdminUserViewModel();
+    (bool, string) loginValue;
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        loginValue = await userService.LoginUserAsync(model);
+        if (!loginValue.Item1)
+        {
+            snackbar.Add($"{loginValue.Item2}", Severity.Error);
+        }
+        if (loginValue.Item1)
+        {
+            snackbar.Add($"{loginValue.Item2}", Severity.Success);
+            navigationManager.NavigateTo("/CreateDinosaurExpert");
+        }
+
+    }
+
+}

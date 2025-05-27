@@ -1,0 +1,136 @@
+﻿@page "/video"
+
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<MudStack Style="width: 100%">
+    <MudFileUpload T="IBrowserFile"
+                   @ref="@_fileUpload"
+                   OnFilesChanged="OnInputFileChanged"
+                   Hidden="@false"
+                   InputClass="absolute mud-width-full mud-height-full overflow-hidden z-10"
+                   InputStyle="opacity:0"
+                   tabindex="-1"
+                   @ondrop="@ClearDragClass"
+                   @ondragenter="@SetDragClass"
+                   @ondragleave="@ClearDragClass"
+                   @ondragend="@ClearDragClass"
+                   Accept=".mp4, .mpeg, .avi, .wmv">
+        <ActivatorContent>
+            <MudPaper Height="300px"
+                      Outlined="true"
+                      Class="@_dragClass">
+                <MudText Typo="Typo.h6">
+                    Drag and drop a video file here or click
+                </MudText>
+                @if (!string.IsNullOrEmpty(_fileName))
+                {
+                    <MudChip T="string"
+                             Color="Color.Dark"
+                             Text="@_fileName"
+                             tabindex="-1" />
+                }
+            </MudPaper>
+        </ActivatorContent>
+    </MudFileUpload>
+    <MudToolBar Gutters="@false"
+                Class="relative d-flex justify-end gap-4">
+        <MudButton Color="Color.Primary"
+                   Disabled="@string.IsNullOrEmpty(_fileName)"
+                   OnClick="@Upload"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.CloudUpload">
+            Upload
+        </MudButton>
+        <MudButton Color="Color.Error"
+                   Disabled="@string.IsNullOrEmpty(_fileName)"
+                   OnClick="@ClearAsync"
+                   Variant="Variant.Filled">
+            Clear
+        </MudButton>
+    </MudToolBar>
+    @if (!string.IsNullOrEmpty(_uploadedVideoPath))
+    {
+        <video controls width="600">
+            <source src="@_uploadedVideoPath" type="video/mp4" />
+            Your browser does not support the video tag.
+        </video>
+    }
+</MudStack>
+
+@code {
+#nullable enable
+    private HttpClient Http => HttpClientFactory.CreateClient("DefaultClient");
+    private const string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
+    private string _dragClass = DefaultDragClass;
+    private string? _fileName;
+    private MudFileUpload<IBrowserFile>? _fileUpload;
+    private IBrowserFile? _selectedFile;
+    private string? _uploadedVideoPath;
+
+    private async Task ClearAsync()
+    {
+        await (_fileUpload?.ClearAsync() ?? Task.CompletedTask);
+        _fileName = null;
+        _selectedFile = null;
+        ClearDragClass();
+    }
+
+    private Task OpenFilePickerAsync()
+        => _fileUpload?.OpenFilePickerAsync() ?? Task.CompletedTask;
+
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        _selectedFile = e.File;
+
+        if (_selectedFile != null)
+        {
+            _fileName = _selectedFile.Name;
+        }
+    }
+
+    private async Task Upload()
+    {
+        if (_selectedFile != null)
+        {
+            try
+            {
+                var content = new MultipartFormDataContent();
+                var stream = _selectedFile.OpenReadStream(maxAllowedSize: 52428800); // Set 50 MB max size
+                content.Add(new StreamContent(stream), "file", _selectedFile.Name);
+
+                var response = await Http.PostAsync("api/Video/Upload", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Video uploaded successfully!", Severity.Success);
+
+                    // Get the video path from the server response
+                    var videoPath = await response.Content.ReadAsStringAsync();
+                    Snackbar.Add($"Video saved at: {videoPath}", Severity.Info);
+
+                    _uploadedVideoPath = videoPath;
+                    // Optionally, update the UI with the video path
+                }
+                else
+                {
+                    Snackbar.Add("Video upload failed!", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"An error occurred: {ex.Message}", Severity.Error);
+            }
+        }
+        else
+        {
+            Snackbar.Add("No file selected for upload.", Severity.Warning);
+        }
+    }
+
+    private void SetDragClass()
+        => _dragClass = $"{DefaultDragClass} mud-border-primary";
+
+    private void ClearDragClass()
+        => _dragClass = DefaultDragClass;
+}

@@ -1,0 +1,21 @@
+﻿@using Microsoft.AspNetCore.Components
+
+@if (!string.IsNullOrEmpty(VideoSource))
+{
+    <video controls width="600">
+        <source src="@VideoSource" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
+}
+else
+{
+    <MudText>No video available.</MudText>
+}
+
+@code {
+    [Parameter] 
+    public string? VideoSource { get; set; }
+
+    [Parameter]
+    public VideoViewModel ViewModel { get; set; } = new();
+}

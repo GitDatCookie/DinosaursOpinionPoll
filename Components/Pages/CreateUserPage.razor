@@ -1,0 +1,67 @@
+﻿@page "/CreateDinosaurExpert"
+@inject IUserService userService
+@inject ISnackbar snackbar
+
+
+<AuthorizeView>
+    <Authorized>
+        <EditForm Context=editFormContext EditContext="_editContext" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudItem xs="12" sm="7">
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="User name" HelperText="Choose a user name"
+                                        @bind-Value="_model.UserName" For="@(() => _model.UserName)" />
+                        <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
+                                        @bind-Value="_model.Password" For="@(() => _model.Password)" InputType="InputType.Password" />
+                    </MudCardContent>
+                    <MudCardActions>
+                            @if (!_editContext.GetValidationMessages().Any() &&
+                                !string.IsNullOrEmpty(_model.Password) &&
+                                !string.IsNullOrEmpty(_model.UserName))
+                            {
+                                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                            }
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </EditForm>
+    </Authorized>
+    <NotAuthorized>
+        <h1>
+            You Shall Not Pass!
+        </h1>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    private AdminUserViewModel _model = new AdminUserViewModel();
+    private EditContext? _editContext;
+
+
+    protected override void OnInitialized()
+    {
+        // Initialize the EditContext with the model
+        _editContext = new EditContext(_model);
+
+        // Subscribe to field changes to trigger UI updates
+        _editContext.OnFieldChanged += async (sender, e) =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+    }
+
+    private async Task OnValidSubmit(EditContext editContext)
+    {
+        // Call your UserService to create the user
+        if (await userService.CreateUserModelAsync(_model))
+        {
+            snackbar.Add("Admin was created successfully.", Severity.Success);
+        }
+        else
+        {
+            snackbar.Add("Failed to create the admin.", Severity.Error);
+        }
+    }
+}
