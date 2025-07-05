@@ -27,7 +27,7 @@ namespace AI_Project.Services
         {
             ImageModel imageToBeChanged = GetImage(imageId);
             imageToBeChanged.Title = newImageViewModel.Title;
-            imageToBeChanged.Path = newImageViewModel.Path;
+            imageToBeChanged.Data = newImageViewModel.Data;
 
             _dbContext.SaveChanges();
         }
@@ -37,7 +37,10 @@ namespace AI_Project.Services
             _dbContext.Images.Remove(GetImage(imageId));
             _dbContext.SaveChanges();
         }
-
+        public ImageModel GetImage(Guid imageId)
+        {
+            return _dbContext.Images.FirstOrDefault(x => x.Id == imageId);
+        }
         public ImageViewModel GetImageViewModel(Guid imageId)
         {
             ImageModel imageModel = _dbContext.Images.FirstOrDefault(x => x.Id == imageId);
@@ -60,7 +63,7 @@ namespace AI_Project.Services
             {
                 Id = imageModel.Id,
                 Title = imageModel.Title,
-                Path = imageModel.Path
+                Data = imageModel.Data
             };
         }
 
@@ -69,14 +72,11 @@ namespace AI_Project.Services
             return new ImageModel()
             {
                 Title = imageViewModel.Title,
-                Path = imageViewModel.Path
+                Data = imageViewModel.Data
             };
         }
 
-        private ImageModel GetImage(Guid imageId)
-        {
-            return _dbContext.Images.FirstOrDefault(x => x.Id == imageId);
-        }
+
     }
 
 }

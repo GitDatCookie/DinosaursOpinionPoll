@@ -3,140 +3,210 @@
 @inherits QuestionaireComponentBase
 
 <MudPaper Class="pa-4">
+    <MudForm @ref=mudForm>
+        <MudStack Row>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+        </MudStack>
 
-    <MudText Typo="Typo.subtitle1" Class="mb-2">Set your Question.</MudText>
-    <MudTextField @bind-Value="QuestionValue" Label="Question" Variant="Variant.Text" Placeholder="Type in your Question..."></MudTextField>
+        <MudStack Row>
+            @if (!IsRichText && !IsLabel)
+            {
+                <MudTextField @bind-Value="Title"
+                              Placeholder="Type in your Question..."
+                              Required
+                              RequiredError="Question is Required"
+                              Immediate />
+            }
+            @if (IsRichText)
+            {
+                <MudHtmlEditor @bind-Html=@Title style="width:100%">
+                    <MudHtmlToolbarOptions InsertImage="false" />
+                </MudHtmlEditor>
+                @if (isSubmitted && string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        Question is Required
+                    </MudText>
+                }
+            }
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the placeholder.</MudText>
-    <MudTextField @bind-Value="LabelValue" Label="Label" Variant="Variant.Text" Placeholder="Type in Label Value..."></MudTextField>
+            <MudIconButton Class="float-end"
+                           Icon="@Icons.Material.Filled.Settings"
+                           Color="Color.Primary"
+                           OnClick="@(()=>SetQuestionOptionsAsync(EQuestionAnswerFieldType.AnswerField, TemplateViewModel))" />
+        </MudStack>
 
-    <!-- Dropdown using sorted items -->
-    <MudSelect Label="@LabelValue" @bind-Value="value">
-        @foreach (var item in SortedItems)
+
+        <MudSelect 
+        Class="@(TemplateViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"  
+        T="AnswerViewModel"
+        Label="@TemplateViewModel.ComponentStyle.Label"
+        Variant="@TemplateViewModel.ComponentStyle.TextVariant"
+        Placeholder="@TemplateViewModel.ComponentStyle.Placeholder"
+        HelperText="@TemplateViewModel.ComponentStyle.HelperText"
+        Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")>
+            @foreach(var option in EditableOptions)
+            {
+                <MudSelectItem Value="option">@option.AnswerText</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudDivider Class="my-4" />
+
+        @foreach (var option in EditableOptions.Select((name, index) => new { Name = name.AnswerText, Index = index }))
         {
-            <MudSelectItem Value="@item">@item</MudSelectItem>
-        }
-    </MudSelect>
-
-    <!-- Input to add new items -->
-    <MudTextField @bind-Value="newItem" Label="New Item" Class="mt-4" />
-    <MudButton OnClick="AddItem" Color="Color.Primary" Class="ml-2 mt-4">Add</MudButton>
-
-    <!-- Display the items as a list with inline edit and delete buttons -->
-    <MudList T="string" Class="mt-4">
-        @foreach (var item in SortedItems)
-        {
-            <MudListItem>
-                <div class="d-flex align-items-center w-100">
-                    <div class="flex-grow-1">
-                        @if (editingItem == item)
-                        {
-                            <!-- Inline editing: when the item is in edit mode -->
-                            <MudTextField @bind-Value="editText" Immediate="true" />
-                        }
-                        else
-                        {
-                            <!-- Display the item text -->
-                            <span>@item</span>
-                        }
-                    </div>
-                    @if (editingItem == item)
+            <MudItem Class="d-flex align-items-center mb-8">
+                <MudStack Row=true Class="ml-4 me-2">
+                    @if (EditIndex == option.Index)
                     {
-                        <!-- Save and Cancel buttons while editing -->
-                        <MudButton OnClick="@(() => SaveEdit(item))" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="me-2">
-                            Save
-                        </MudButton>
-                        <MudButton OnClick="CancelEdit" Color="Color.Secondary" Variant="Variant.Text" Size="Size.Small" Class="me-2">
-                            Cancel
-                        </MudButton>
+                        <!-- Editable text field for the label -->
+                        <MudTextField @bind-Value="EditableOptions[option.Index].AnswerText" Immediate="true" OnBlur="@(() => FinishEditing())" />
                     }
                     else
                     {
-                        <!-- Edit button when not editing -->
-                        <MudButton OnClick="@(() => StartEdit(item))" Variant="Variant.Outlined" Size="Size.Small" Class="me-2">
-                            Edit
-                        </MudButton>
+                        <MudText>
+                            @option.Name
+                        </MudText>
                     }
-                    <!-- Delete button is always available -->
-                    <MudButton OnClick="@(() => DeleteItem(item))" Color="Color.Error" Variant="Variant.Outlined" Size="Size.Small">
-                        Delete
-                    </MudButton>
-                </div>
-            </MudListItem>
+                </MudStack>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.Index)" Class="ms-2" />
+                @if (EditableOptions.Count > DropdownMin)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveOption(option.Index))" />
+                }
+            </MudItem>
+
         }
-    </MudList>
+
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (EditableOptions.Count < DropdownMax)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=> AddOption("DropdownItem"))">
+                    Add Label
+                </MudButton>
+            }
+            <MudSpacer />
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                    Save Question
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                    Edit Question
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
 </MudPaper>
 
 @code {
     [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = new();
-    // Value bound to the MudSelect
-    private string value { get; set; }
-
-    public string QuestionValue { get; set; }
-    public string LabelValue { get; set; }
-    // List of items shown in both the select and the list.
-    private List<string> selectionValues = new List<string>();
-
-    // New Item text from the MudTextField.
-    private string newItem;
-
-    // For inline editing:
-    // Tracks which item is being edited (the actual string value).
-    private string editingItem;
-    // Holds the temporary edit value.
-    private string editText;
-
-    // Automatically order the list in ascending order.
-    private IEnumerable<string> SortedItems => selectionValues.OrderBy(x => x);
-
-    // Adds a new item to the list if the newItem is not empty.
-    private void AddItem()
+    public new QuestionViewModel TemplateViewModel
     {
-        if (!string.IsNullOrWhiteSpace(newItem))
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
+
+    private static int DropdownMin { get; set; } = 2;
+    private int DropdownMax { get; set; } = 50;
+    private MudForm mudForm;
+    private bool isSubmitted;
+
+    protected override void OnInitialized()
+    {
+        TemplateViewModel ??= new QuestionViewModel();
+        IsEditable = TemplateViewModel?.Id != Guid.Empty;
+        SetFieldFlags(TemplateViewModel.TitleFieldType);
+        Title = TemplateViewModel.Title;
+        ComponentColour = TemplateViewModel.ComponentStyle?.ComponentColour ?? ComponentColour;
+        if (TemplateViewModel.Answers is not null)
         {
-            selectionValues.Add(newItem);
-            newItem = string.Empty;
+            EditableOptions = TemplateViewModel.Answers;
         }
-    }
-
-    // Starts editing the specified item.
-    private void StartEdit(string item)
-    {
-        editingItem = item;
-        editText = item;
-    }
-
-    // Cancels the current editing operation.
-    private void CancelEdit()
-    {
-        editingItem = null;
-        editText = string.Empty;
-    }
-
-    // Saves the edit for the specified original item.
-    private void SaveEdit(string originalItem)
-    {
-        if (!string.IsNullOrWhiteSpace(editText))
+        else
         {
-            int index = selectionValues.FindIndex(x => x == originalItem);
-            if (index != -1)
+            InitialiseOptions("DropdownItem", 3);
+        }
+
+    }
+
+    private async void SaveQuestion()
+    {
+        isSubmitted = true;
+        await mudForm.Validate();
+
+        if (string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+        {
+            mudForm.IsValid = false;
+            return;
+        }
+        if (mudForm.IsValid)
+        {
+            QuestionViewModel question = new()
             {
-                selectionValues[index] = editText;
-            }
+                QuestionType = EQuestionType.DropDown,
+                Title = Title,
+                Answers = EditableOptions,
+                TitleFieldType = TemplateViewModel.TitleFieldType,
+                ComponentStyle = CreateStyleModel()
+            };
+
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+                SanitiseRichText(TemplateViewModel.Title);
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.LabelAsTitleField)
+                question.Title = TemplateViewModel.ComponentStyle.Label;
+
+            await SaveQuestionaireComponentModelAsync(question);
         }
-        editingItem = null;
-        editText = string.Empty;
     }
 
-    // Deletes the given item from the list.
-    private void DeleteItem(string item)
+    private async Task EditQuestion()
     {
-        if (editingItem == item)
+        isSubmitted = true;
+        await mudForm.Validate();
+        if (string.IsNullOrWhiteSpace(Title))
         {
-            editingItem = null;
-            editText = string.Empty;
+            mudForm.IsValid = false;
+            return;
         }
-        selectionValues.Remove(item);
+
+        TemplateViewModel.Title = Title;
+        TemplateViewModel.Answers = EditableOptions;
+        TemplateViewModel.ComponentStyle = CreateStyleModel();
+
+        if (TemplateViewModel.TitleFieldType == ETitleFieldType.LabelAsTitleField)
+            TemplateViewModel.Title = TemplateViewModel.ComponentStyle.Label;
+
+        await EditQuestionaireComponentModelAsync(TemplateViewModel);
+    }
+
+    private ComponentStyleViewModel CreateStyleModel() =>
+    new ComponentStyleViewModel
+    {
+        QuestionAnswerFieldType = EQuestionAnswerFieldType.AnswerField,
+        ComponentColour = ComponentColour,
+        IsLabelColourised = TemplateViewModel.ComponentStyle.IsLabelColourised,
+        TextVariant = TemplateViewModel.ComponentStyle.TextVariant,
+        HelperText = TemplateViewModel.ComponentStyle.HelperText,
+        Label = TemplateViewModel.ComponentStyle.Label,
+        Placeholder = TemplateViewModel.ComponentStyle.Placeholder
+    };
+
+    private void SetFieldFlags(ETitleFieldType type)
+    {
+        IsRichText = type == ETitleFieldType.RichTextTitleField;
+        IsLabel = type == ETitleFieldType.LabelAsTitleField;
     }
 }
+
+<style>
+    .label-custom-color .mud-input-label {
+        color: @ComponentColour !important;
+    }
+</style>

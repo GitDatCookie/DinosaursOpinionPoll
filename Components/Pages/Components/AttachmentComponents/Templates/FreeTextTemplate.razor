@@ -1,5 +1,4 @@
-﻿@page "/text"
-@using Ganss.Xss
+﻿@using Ganss.Xss
 @inherits QuestionaireComponentBase
 
 <MudPaper Class="d-flex flex-column pa-4">
@@ -30,7 +29,11 @@
 
 @code{
     [Parameter]
-    public FreeTextViewModel ViewModel { get; set; }
+    public new FreeTextViewModel TemplateViewModel
+    {
+        get => (FreeTextViewModel)base.ViewModel;
+        set => base.ViewModel = value; 
+    }
 
     public string test { get; set; } = "";
 
@@ -38,11 +41,11 @@
 
     protected override void OnInitialized()
     {
-        if (ViewModel != null && ViewModel.Id != new Guid())
+        if (TemplateViewModel != null && TemplateViewModel.Id != new Guid())
         {
             IsEditable = true;
-            Title = ViewModel.Title;
-            FreeText = ViewModel.FreeText;
+            Title = TemplateViewModel.Title;
+            FreeText = TemplateViewModel.FreeText;
         }
     }
 
@@ -53,9 +56,7 @@
 
     private void SaveText()
     {
-        var sanitiser = new HtmlSanitizer();
-        sanitiser.AllowedAttributes.Add("class");
-        FreeText = sanitiser.Sanitize(FreeText);
+        SanitiseRichText(FreeText);
 
         FreeTextViewModel text= new()
             {
@@ -68,8 +69,8 @@
 
     private async Task EditText()
     {
-        ViewModel.Title = Title;
+        TemplateViewModel.Title = Title;
 
-        await EditQuestionaireComponentModelAsync(ViewModel);
+        await EditQuestionaireComponentModelAsync(TemplateViewModel);
     }
 }

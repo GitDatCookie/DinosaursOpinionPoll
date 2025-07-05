@@ -1,0 +1,110 @@
+﻿@using AI_Project.Helpers
+@using MudBlazor
+@using MudBlazor.Utilities
+@using System.Reflection
+@using System.Text.Json
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        Select the appropriate options for the text field.
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref=mudForm>
+            <MudStack>
+                <MudRadioGroup @bind-Value=ViewModel.TitleFieldType>
+                    <MudRadio Value="ETitleFieldType.TextTitleField">Use Textfield as Question.</MudRadio>
+                    <MudRadio Value="ETitleFieldType.RichTextTitleField">Use Rich Textfield as Question.</MudRadio>
+                    @if (AnswerFieldType != EQuestionAnswerFieldType.NoAnswerField)
+                    {
+                        <MudRadio Value="ETitleFieldType.LabelAsTitleField">Use Label as Question.</MudRadio>
+                    }
+                </MudRadioGroup>
+                @if (ViewModel is QuestionViewModel questionViewModel && AnswerFieldType != EQuestionAnswerFieldType.NoAnswerField)
+                {
+                    <MudCheckBox T="bool" @bind-value="questionViewModel.ComponentStyle.IsLabelColourised">
+                        Colourise label.
+                    </MudCheckBox>
+                    <MudSelect @bind-value="questionViewModel.ComponentStyle.TextVariant">
+                        <MudSelectItem Value="Variant.Filled">Filled</MudSelectItem>
+                        <MudSelectItem Value="Variant.Outlined">Outlined</MudSelectItem>
+                        <MudSelectItem Value="Variant.Text">Clean</MudSelectItem>
+                    </MudSelect>
+
+                    <MudTextField @bind-value="questionViewModel.ComponentStyle.Label" 
+                    Variant="Variant.Text" 
+                    Label="Label" 
+                    Placeholder="Type in label Value..."
+                    Required="ViewModel.TitleFieldType == ETitleFieldType.LabelAsTitleField"
+                    RequiredError="Label is required" />
+                    <MudTextField @bind-value="questionViewModel.ComponentStyle.Placeholder" Variant="Variant.Text" Label="Placeholder" Placeholder="Type in placeholder Value..."></MudTextField>
+                    <MudTextField @bind-value="questionViewModel.ComponentStyle.HelperText" Variant="Variant.Text" Label="HelperText" Placeholder="Type in helpertext Value..."></MudTextField>
+
+                    if (AnswerFieldType == EQuestionAnswerFieldType.NumberAnswerField && questionViewModel.ComponentStyle.NumericFieldStyle != null)
+                    {
+                        <MudRadioGroup @bind-Value="questionViewModel.ComponentStyle.NumericFieldStyle.NumberType">
+                            <MudRadio Value="ENumberType.Integer">Whole numbers.</MudRadio>
+                            <MudRadio Value="ENumberType.Float">Decimal numbers.</MudRadio>
+                        </MudRadioGroup>
+
+                        <MudText Typo="Typo.caption">Keep a field empty if you want no restriction.</MudText>
+                        switch (questionViewModel.ComponentStyle.NumericFieldStyle.NumberType)
+                        {
+                            case ENumberType.Integer:
+                                <MudNumericField T="int?" @bind-Value="questionViewModel.ComponentStyle.NumericFieldStyle.MinNumberInteger" Label="Minimum value" Placeholder="Enter a minimum number." />
+                                <MudNumericField T="int?" @bind-Value="questionViewModel.ComponentStyle.NumericFieldStyle.MaxNumberInteger" Label="Maximum value" Placeholder="Enter a maximum number." />
+                                break;
+                            case ENumberType.Float:
+                                <MudNumericField T="float?" @bind-Value="questionViewModel.ComponentStyle.NumericFieldStyle.MinNumberFloat" Label="Minimum value" Placeholder="Enter a minimum number." />
+                                <MudNumericField T="float?" @bind-Value="questionViewModel.ComponentStyle.NumericFieldStyle.MaxNumberFloat" Label="Maximum value" Placeholder="Enter a maximum number." />
+                                break;
+                        }
+
+                    }
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="ConfirmAsync">OK</MudButton>
+        <MudButton Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public QuestionaireComponentViewModelBase ViewModel { get; set; } = new();
+
+    [Parameter]
+    public EQuestionAnswerFieldType AnswerFieldType { get; set; }
+
+    private QuestionaireComponentViewModelBase ViewModelCopy = new();
+
+    private MudForm mudForm;
+
+    protected override void OnInitialized()
+    {
+        var type = ViewModel.GetType();
+        ViewModelCopy = (QuestionaireComponentViewModelBase)Activator
+            .CreateInstance(type)!;
+
+        ViewModel.DeepCopyTo(ViewModelCopy);
+    }
+
+    private async Task ConfirmAsync()
+    {
+        await mudForm.Validate();
+
+        if (mudForm.IsValid)
+            MudDialog.Close(DialogResult.Ok(ViewModel));
+    }
+
+    private void Cancel()
+    {
+        ViewModelCopy.DeepCopyTo(ViewModel);
+        MudDialog.Close(DialogResult.Cancel());
+    }
+}

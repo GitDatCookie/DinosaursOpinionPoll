@@ -1,0 +1,41 @@
+﻿@using AI_Project.ViewModels
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inherits QuestionaireComponentBase
+
+@if (IsEditable)
+{
+    <MudCard Class="ma-2" Outlined>
+        <MudCardContent>
+            @foreach (var item in PageViewModel.Items)
+            {
+                <DynamicComponentComponent ItemType="@item.itemType"
+                                           QuestionType="@item.questionType"
+                                           ViewModel="@item.viewModelBase"
+                                           IsItemEditable="false" />
+            }
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton>
+                Next
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+}
+else
+{
+    <QuestionairePageTemplate PageViewModel="PageViewModel" />
+}
+
+@code {
+    [Parameter]
+    public QuestionaireViewModel Questionaire { get; set; }
+
+    [Parameter]
+    public QuestionairePageViewModel PageViewModel { get; set; } = new();
+
+    [Parameter]
+    public bool IsEditable { get; set; }
+
+    bool editable = true;
+}

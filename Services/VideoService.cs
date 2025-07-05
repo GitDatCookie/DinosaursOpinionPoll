@@ -39,6 +39,11 @@ namespace AI_Project.Services
             _dbContext.SaveChanges();
         }
 
+        public VideoModel GetVideo(Guid imageId)
+        {
+            return _dbContext.Videos.FirstOrDefault(x => x.Id == imageId);
+        }
+
         public VideoViewModel GetVideoViewModel(Guid videoId)
         {
             VideoModel videoModel = _dbContext.Videos.FirstOrDefault(x => x.Id == videoId);
@@ -92,12 +97,6 @@ namespace AI_Project.Services
                 Title = videoViewModel.Title,
                 Path = videoViewModel.Path
             };
-        }
-
-        // Retrieves an ImageModel from the database by its Id.
-        private VideoModel GetVideo(Guid imageId)
-        {
-            return _dbContext.Videos.FirstOrDefault(x => x.Id == imageId);
         }
     }
 }

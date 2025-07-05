@@ -4,68 +4,95 @@
 @inherits QuestionaireComponentBase
 
 <MudPaper Class="d-flex flex-column pa-4">
-    <MudStack Row>
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
-    </MudStack>
-
-    <MudTextField @bind-Value="Title" Placeholder="Type in your Question..." />
-
-    <MudItem Class="d-flex flex-column align-center mt-4">
-        <MudRating @bind-SelectedValue="RatingValue" HoveredValueChanged="HandleHoveredValueChanged" MaxValue="@EditableOptions.Count" RatingItemsStyle=@($"color:{ComponentColour}")/>
-        <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">@LabelText</MudText>
-    </MudItem>
-
-    <MudDivider Class="my-4" />
-
-    @foreach (var option in EditableOptions.Select((name, index) => new { Name = name, Index = index }))
-    {
-        <MudItem Class="d-flex align-items-center mb-8">
-            <MudStack Row=true Class="ml-4 me-2">
-                <MudIcon Icon="@Icons.Material.Filled.StarRate" />
-                @if (EditIndex == option.Index)
-                {
-                    <MudTextField Class="me-2" @bind-Value="EditableOptions[option.Index]" Immediate="true" OnBlur="@(() => FinishEditing())" />
-                }
-                else
-                {
-                    <MudText>@option.Name</MudText>
-                }
-            </MudStack>
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.Index)" />
-            @if (EditableOptions.Count > MinStars)
+    <MudForm @ref=mudForm>
+        <MudStack Row>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+        </MudStack>
+        <MudStack Row>
+            @if (!IsRichText && !IsLabel)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveOption(option.Index))" />
+                <MudTextField @bind-Value="Title"
+                Placeholder="Type in your Question..."
+                Required
+                RequiredError="Question is Required"
+                Immediate />
             }
-        </MudItem>
-    }
+            @if (IsRichText)
+            {
+                <MudHtmlEditor @bind-Html=@Title style="width:100%">
+                    <MudHtmlToolbarOptions InsertImage="false" />
+                </MudHtmlEditor>
+                @if (isSubmitted && string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        Question is Required
+                    </MudText>
+                }
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" OnClick="@(()=>SetQuestionOptionsAsync(EQuestionAnswerFieldType.NoAnswerField, TemplateViewModel))" Class="float-end" />
+        </MudStack>
 
-    <MudGrid Class="d-flex pl-5 mt-6">
-        @if (EditableOptions.Count < MaxStars)
+        <MudItem Class="d-flex flex-column align-center mt-4">
+            <MudRating @bind-SelectedValue="RatingValue" HoveredValueChanged="HandleHoveredValueChanged" MaxValue="@EditableOptions.Count" RatingItemsStyle=@($"color:{ComponentColour}")/>
+            <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">@LabelText</MudText>
+        </MudItem>
+
+        <MudDivider Class="my-4" />
+
+        @foreach (var option in EditableOptions.Select((name, index) => new { Name = name.AnswerText, Index = index }))
         {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>AddOption("Star"))" Class="ml-5">
-                Add Star
-            </MudButton>
+            <MudItem Class="d-flex align-items-center mb-8">
+                <MudStack Row=true Class="ml-4 me-2">
+                    <MudIcon Icon="@Icons.Material.Filled.StarRate" />
+                    @if (EditIndex == option.Index)
+                    {
+                        <MudTextField Class="me-2" @bind-Value="EditableOptions[option.Index].AnswerText" Immediate="true" OnBlur="@(() => FinishEditing())" />
+                    }
+                    else
+                    {
+                        <MudText>@option.Name</MudText>
+                    }
+                </MudStack>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.Index)" />
+                @if (EditableOptions.Count > MinStars)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveOption(option.Index))" />
+                }
+            </MudItem>
         }
-        <MudSpacer />
-        @if (!IsEditable)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
-                Save Question
-            </MudButton>
-        }
-        else
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
-                Edit Question
-            </MudButton>
-        }
-    </MudGrid>
+
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (EditableOptions.Count < MaxStars)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>AddOption("Star"))" Class="ml-5">
+                    Add Star
+                </MudButton>
+            }
+            <MudSpacer />
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                    Save Question
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                    Edit Question
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
 </MudPaper>
 
 @code {
     [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = new();
+    public new QuestionViewModel TemplateViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
 
     private int selectedVal = 0;
 
@@ -79,24 +106,28 @@
 
     private const int MinStars = 2;
     private const int MaxStars = 10;
+    private MudForm mudForm;
+    private bool isSubmitted;
 
     private string LabelText =>
         (activeVal ?? selectedVal) is int idx && idx >= 0 && idx < EditableOptions.Count
-            ? EditableOptions[idx]
+            ? EditableOptions[idx].AnswerText
             : "Rate our product!";
 
     protected override void OnInitialized()
     {
-        if (ViewModel != null && ViewModel.Id != Guid.Empty)
+        TemplateViewModel ??= new QuestionViewModel();
+        IsEditable = TemplateViewModel?.Id != Guid.Empty;
+        SetFieldFlags(TemplateViewModel.TitleFieldType);
+        Title = TemplateViewModel.Title;
+        ComponentColour = TemplateViewModel.ComponentStyle?.ComponentColour ?? ComponentColour;
+        if (TemplateViewModel.Answers is not null)
         {
-            IsEditable = true;
-            EditableOptions = ViewModel.Answers;
-            Title = ViewModel.Title;
-            ComponentColour = ViewModel.ComponentColour;
+            EditableOptions = TemplateViewModel.Answers;
         }
         else
         {
-            EditableOptions = new List<string> { "Bad", "Good" };
+            InitialiseOptions("Star", 3);
         }
     }
 
@@ -108,25 +139,63 @@
             activeVal = null;
     }
 
-    private void SaveQuestion()
+    private async void SaveQuestion()
     {
+        await mudForm.Validate();
+
+        if (string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+        {
+            mudForm.IsValid = false;
+            return;
+        }
+
+        if (mudForm.IsValid)
+        {
         QuestionViewModel question = new()
             {
                 QuestionType = Enums.EQuestionType.StarRating,
                 Title = Title,
                 Answers = EditableOptions,
-                ComponentColour = ComponentColour
-            };
+                TitleFieldType = TemplateViewModel.TitleFieldType,
+                ComponentStyle = CreateStyleModel()
+                };
 
-        SaveQuestionaireComponentModelAsync(question);
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+                SanitiseRichText(TemplateViewModel.Title);
+
+            await SaveQuestionaireComponentModelAsync(question);
+        }
     }
 
     private async Task EditQuestion()
     {
-        ViewModel.Title = Title;
-        ViewModel.Answers = EditableOptions;
-        ViewModel.ComponentColour = ComponentColour;
+        isSubmitted = true;
+        await mudForm.Validate();
+        if (string.IsNullOrWhiteSpace(Title))
+        {
+            mudForm.IsValid = false;
+            return;
+        }
 
-        await EditQuestionaireComponentModelAsync(ViewModel);
+        if (mudForm.IsValid)
+        {
+        TemplateViewModel.Title = Title;
+        TemplateViewModel.Answers = EditableOptions;
+        TemplateViewModel.ComponentStyle = CreateStyleModel();
+
+        await EditQuestionaireComponentModelAsync(TemplateViewModel);
+        }
+    }
+
+    private ComponentStyleViewModel CreateStyleModel() =>
+    new ComponentStyleViewModel
+    {
+        QuestionAnswerFieldType = EQuestionAnswerFieldType.NoAnswerField,
+        ComponentColour = ComponentColour,
+    };
+
+    private void SetFieldFlags(ETitleFieldType type)
+    {
+        IsRichText = type == ETitleFieldType.RichTextTitleField;
     }
 }

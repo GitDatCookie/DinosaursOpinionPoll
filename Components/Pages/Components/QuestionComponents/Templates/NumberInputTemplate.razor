@@ -1,73 +1,203 @@
-﻿<MudPaper  Class="pa-4">
-    <MudText Typo="Typo.h6" Class="mb-4">NumberField Question.</MudText>
+﻿@inherits QuestionaireComponentBase
 
-    <MudText Typo="Typo.subtitle1" Class="mb-2">Set your Question.</MudText>
-    <MudTextField @bind-Value="QuestionValue" Label="Question" Variant="Variant.Text" Placeholder="Type in your Question..."></MudTextField>
+<MudPaper  Class="pa-4">
+    <MudForm @ref=mudForm>
+        <MudStack Row>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+        </MudStack>
 
-    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Configure your Textfield.</MudText>
+        <MudStack Row>
+            @if (!IsRichText && !IsLabel)
+            {
+                <MudTextField @bind-Value="Title"
+                Placeholder="Type in your Question..."
+                Required
+                RequiredError="Question is Required"
+                Immediate />
+            }
+            @if (IsRichText)
+            {
+                <MudHtmlEditor @bind-Html=@Title style="width:100%">
+                    <MudHtmlToolbarOptions InsertImage="false" />
+                </MudHtmlEditor>
+                @if (isSubmitted && string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        Question is Required
+                    </MudText>
+                }
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" OnClick="@(()=>SetQuestionOptionsAsync(EQuestionAnswerFieldType.NumberAnswerField, TemplateViewModel))" Class="float-end" />
+        </MudStack>
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the label.</MudText>
-    <MudTextField @bind-Value="LabelValue" Label="Label" Variant="Variant.Text" Placeholder="Type in Textfields Label..."></MudTextField>
+        @if (TemplateViewModel.ComponentStyle.NumericFieldStyle.NumberType == ENumberType.Integer)
+        {
+            <MudNumericField Class="@(TemplateViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
+            T="int"
+            Label="@TemplateViewModel.ComponentStyle.Label"
+            Variant="@TemplateViewModel.ComponentStyle.TextVariant"
+            Placeholder="@TemplateViewModel.ComponentStyle.Placeholder"
+            HelperText="@TemplateViewModel.ComponentStyle.HelperText"
+            Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")
+            @attributes="GetMinMaxAttributes()">
+            </MudNumericField>
+        }
+        else
+        {
+            <MudNumericField Class="@(TemplateViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
+            T="float"
+            Label="@TemplateViewModel.ComponentStyle.Label"
+            Variant="@TemplateViewModel.ComponentStyle.TextVariant"
+            Placeholder="@TemplateViewModel.ComponentStyle.Placeholder"
+            HelperText="@TemplateViewModel.ComponentStyle.HelperText"
+            Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")
+            @attributes="GetMinMaxAttributes()">
+            </MudNumericField>
+        }
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the input type.</MudText>
-    <MudSelect T="string" @bind-Value="NumberType" Label="Number Type" Variant="Variant.Text" Placeholder="Choose a number type...">
-        <MudSelectItem Value="@("Round Number")">Round Number</MudSelectItem>
-        <MudSelectItem Value="@("Decimal")">Decimal</MudSelectItem>
-    </MudSelect>
 
-    @switch (NumberType)
-    {
-        case "Round Number":
-            <MudNumericField T="int" @bind-Value="minInt" Label="Min Value" Variant="QuestionOutline" Class="mt-2" />
-            <MudNumericField T="int" @bind-Value="maxInt" Label="Max Value" Variant="QuestionOutline" Class="mt-2" />
-            break;
-        case "Decimal":
-            <MudNumericField T="decimal" @bind-Value="minDecimal" Label="Min Value" Variant="QuestionOutline" Class="mt-2" />
-            <MudNumericField T="decimal" @bind-Value="maxDecimal" Label="Max Value" Variant="QuestionOutline" Class="mt-2" />
-            break;
-        default:
-            break;
-    }
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the look.</MudText>
-    <MudChipSet T="Variant" @bind-SelectedValue="QuestionOutline" CheckMark SelectionMode="SelectionMode.SingleSelection">
-        <MudChip Variant=Variant.Text Color="Color.Primary" Value="@Variant.Text">Clean</MudChip>
-        <MudChip Variant=Variant.Filled  Color="Color.Primary" Value="@Variant.Filled">Filled</MudChip>
-        <MudChip Variant=Variant.Outlined  Color="Color.Primary" Value="@Variant.Outlined">Outlined</MudChip>
-    </MudChipSet>
-
-    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Save the result.</MudText>
-
-    @switch(NumberType)
-    {
-        case "Round Number":
-            <MudNumericField T="int" Label="LabelValue" Variant="QuestionOutline" Min="minInt" Max="maxInt" />
-            break;
-        case "Decimal":
-            <MudNumericField T="decimal" Label="LabelValue" Variant="QuestionOutline" Min="minDecimal" Max="maxDecimal" />
-            break;
-        default:
-            break;
-    }
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                    Save Question
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                    Edit Question
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
 </MudPaper>
 
 
 @code
 {
     [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = new();
+    public new QuestionViewModel TemplateViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
 
-    public string QuestionValue { get; set; }
-    public string NumberType { get; set; }
-    public string AnswerValue { get; set; }
-    public string LabelValue { get; set; }
-    public Variant QuestionOutline { get; set; }
+    private ENumberType numberType = ENumberType.Integer;
 
-    // Values for int type.
-    private int minInt { get; set; }
-    private int maxInt { get; set; }
+    private MudForm mudForm;
+    private bool isSubmitted;
 
-    // Values for decimal type.
-    private decimal minDecimal { get; set; }
-    private decimal maxDecimal { get; set; }
+    protected override void OnInitialized()
+    {
+        TemplateViewModel ??= new QuestionViewModel();
+        IsEditable = TemplateViewModel?.Id != Guid.Empty;
+        SetFieldFlags(TemplateViewModel.TitleFieldType);
+        TemplateViewModel.ComponentStyle.NumericFieldStyle ??= new();
+        Title = TemplateViewModel.Title;
+        ComponentColour = TemplateViewModel.ComponentStyle?.ComponentColour ?? ComponentColour;
+    }
+
+    private async void SaveQuestion()
+    {
+        isSubmitted = true;
+        await mudForm.Validate();
+        if (string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+        {
+            mudForm.IsValid = false;
+            return;
+        }
+
+        if (mudForm.IsValid)
+        {
+            QuestionViewModel question = new()
+                {
+                    QuestionType = EQuestionType.Number,
+                    Title = Title,
+                    TitleFieldType = TemplateViewModel.TitleFieldType,
+                    ComponentStyle = CreateStyleModel()
+                };
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+                SanitiseRichText(TemplateViewModel.Title);
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.LabelAsTitleField)
+                question.Title = TemplateViewModel.ComponentStyle.Label;
+
+            await SaveQuestionaireComponentModelAsync(question);
+        }
+    }
+
+    private async Task EditQuestion()
+    {
+        isSubmitted = true;
+        await mudForm.Validate();
+        if (string.IsNullOrWhiteSpace(Title))
+        {
+            mudForm.IsValid = false;
+            return;
+        }
+        if (mudForm.IsValid)
+        {
+            TemplateViewModel.Title = Title;
+            TemplateViewModel.ComponentStyle = CreateStyleModel();
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.LabelAsTitleField)
+                TemplateViewModel.Title = TemplateViewModel.ComponentStyle.Label;
+
+            await EditQuestionaireComponentModelAsync(TemplateViewModel);
+        }
+    }
+
+    private Dictionary<string, object> GetMinMaxAttributes()
+    {
+        var attributes = new Dictionary<string, object>();
+
+        switch (TemplateViewModel.ComponentStyle.NumericFieldStyle?.NumberType)
+        {
+            case ENumberType.Integer:
+                if (TemplateViewModel.ComponentStyle.NumericFieldStyle.MinNumberInteger.HasValue)
+                    attributes["Min"] = TemplateViewModel.ComponentStyle.NumericFieldStyle.MinNumberInteger.Value;
+
+                if (TemplateViewModel.ComponentStyle.NumericFieldStyle.MaxNumberInteger.HasValue)
+                    attributes["Max"] = TemplateViewModel.ComponentStyle.NumericFieldStyle.MaxNumberInteger.Value;
+                break;
+            case ENumberType.Float:
+                if (TemplateViewModel.ComponentStyle.NumericFieldStyle.MinNumberFloat.HasValue)
+                    attributes["Min"] = TemplateViewModel.ComponentStyle.NumericFieldStyle.MinNumberFloat.Value;
+
+                if (TemplateViewModel.ComponentStyle.NumericFieldStyle.MaxNumberFloat.HasValue)
+                    attributes["Max"] = TemplateViewModel.ComponentStyle.NumericFieldStyle.MaxNumberFloat.Value;
+                break;
+        }
+
+        return attributes;
+    }
+
+    private ComponentStyleViewModel CreateStyleModel() =>
+    new ComponentStyleViewModel
+    {
+        QuestionAnswerFieldType = EQuestionAnswerFieldType.AnswerField,
+        ComponentColour = ComponentColour,
+        IsLabelColourised = TemplateViewModel.ComponentStyle.IsLabelColourised,
+        TextVariant = TemplateViewModel.ComponentStyle.TextVariant,
+        HelperText = TemplateViewModel.ComponentStyle.HelperText,
+        Label = TemplateViewModel.ComponentStyle.Label,
+        Placeholder = TemplateViewModel.ComponentStyle.Placeholder,
+        NumericFieldStyle = TemplateViewModel.ComponentStyle.NumericFieldStyle
+    };
+
+    private void SetFieldFlags(ETitleFieldType type)
+    {
+        IsRichText = type == ETitleFieldType.RichTextTitleField;
+        IsLabel = type == ETitleFieldType.LabelAsTitleField;
+    }
 }
+
+<style>
+    .label-custom-color .mud-input-label {
+        color: @ComponentColour !important;
+    }
+</style>

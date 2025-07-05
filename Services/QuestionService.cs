@@ -1,8 +1,11 @@
 ﻿using AI_Project.DBContext;
 using AI_Project.Enums;
+using AI_Project.Models;
+using AI_Project.Models.OrderModels;
 using AI_Project.Models.QuestionaireComponentModels;
 using AI_Project.Models.UserModels.SubjectUserModelComponents;
 using AI_Project.Services.Interfaces;
+using AI_Project.ViewModels;
 using AI_Project.ViewModels.QuestionaireComponentViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,133 +14,216 @@ namespace AI_Project.Services
     public class QuestionService : IQuestionService
     {
         private readonly AI_ProjectDbContext _dbContext;
-
-        public string userIdentifier = string.Empty;
         public QuestionService(AI_ProjectDbContext dbContext)
         {
             _dbContext = dbContext;
         }
-        public void CreateQuestion(QuestionViewModel question)
+        #region CRUD
+        public async Task CreateQuestionAsync(QuestionViewModel viewModel)
         {
-            _dbContext.Add(CreateModel(question));
-            _dbContext.SaveChanges();
+            _dbContext.Questions.Add(ToModel(viewModel));
+            await _dbContext.SaveChangesAsync();
         }
-
-        public void ChangeQuestion(Guid questionId, QuestionViewModel newQuestionModel)
+        public async Task UpdateQuestionAsync(Guid questionId, QuestionViewModel updatedModel)
         {
-            QuestionModel questionToBeChanged = GetQuestion(questionId);
-            questionToBeChanged.Title = newQuestionModel.Title != questionToBeChanged.Title 
-                ? newQuestionModel.Title 
-                : questionToBeChanged.Title;
+            QuestionModel model = await GetQuestionAsync(questionId);
 
-            questionToBeChanged.ComponentColour = newQuestionModel.ComponentColour;
-            // Convert collection of answers to a list for indexing.
-            List<AnswerModel> dbAnswers = questionToBeChanged.Answers.ToList();
+            if (model == null)
+                throw new KeyNotFoundException($"Question {questionId} not found.");
 
-            // Determine the number of answers to compare.
-            int minCount = Math.Min(dbAnswers.Count, newQuestionModel.Answers.Count);
+            model.Title = updatedModel.Title;
+            model.TitleFieldType = updatedModel.TitleFieldType;
+            model.QuestionType = updatedModel.QuestionType;
+            model.IsRandomised = updatedModel.IsRandomised;
 
-            // Loop through each answer up to the minimum count.
-            for (int i = 0; i < minCount; i++)
+            ComponentStyleViewToModel(updatedModel.ComponentStyle, model.ComponentStyle);
+
+            SyncAnswers(model, updatedModel.Answers);
+
+            if (updatedModel.RandomGroup != null)
             {
-                if (dbAnswers[i].Answer != newQuestionModel.Answers[i])
-                {
-                    dbAnswers[i].Answer = newQuestionModel.Answers[i];
-                }
-            }
+                RandomGroupModel? randomGroupModel = await _dbContext.RandomGroups
+                    .FirstOrDefaultAsync(randomGroup => randomGroup.Id == updatedModel.RandomGroup.Id);
 
-            // If the viewmodel contains more answers than the database model, add them.
-            if (newQuestionModel.Answers.Count > dbAnswers.Count)
-            {
-                for (int i = dbAnswers.Count; i < newQuestionModel.Answers.Count; i++)
-                {
-                    dbAnswers.Add(new AnswerModel
+                model.RandomGroup = randomGroupModel
+                    ?? new RandomGroupModel
                     {
-                        // Generate a new answer.
-                        Answer = newQuestionModel.Answers[i]
-                    });
-                }
-                questionToBeChanged.Answers = dbAnswers;
+                        GroupName = updatedModel.RandomGroup.GroupName,
+                        RandomGroupType = updatedModel.RandomGroup.RandomGroupType,
+                    };
             }
-            _dbContext.SaveChanges();
-        }
 
-        public void DeleteQuestion(Guid questionId)
-        {
-            _dbContext.Questions.Remove(GetQuestion(questionId));
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
         }
-
-        public QuestionViewModel GetQuestionViewModel(Guid questionId)
+        public async Task DeleteQuestionAsync(Guid questionId)
         {
-            QuestionModel questionModel = _dbContext.Questions.Where(x => x.Id == questionId).FirstOrDefault();
-            return CreateViewModel(questionModel);
-        }
-
-        public List<QuestionViewModel> GetQuestions()
-        {
-            List<QuestionViewModel> result = new List<QuestionViewModel>();
-            foreach (var question in _dbContext.Questions.Include(x => x.Answers))
+            var entity = await _dbContext.Questions.FindAsync(questionId);
+            if (entity != null)
             {
-                result.Add(CreateViewModel(question));
+                _dbContext.Questions.Remove(entity);
+                await _dbContext.SaveChangesAsync();
             }
-            return result;
+        }
+        #endregion
+
+        #region GetQuestions
+        public async Task<QuestionModel> GetQuestionAsync(Guid questionId)
+        {
+            var entity = await _dbContext.Questions
+                .Include(x => x.ComponentStyle)
+                .Include(x => x.Answers)
+                .FirstOrDefaultAsync(x => x.Id == questionId);
+
+            if (entity == null)
+                throw new KeyNotFoundException($"Question {questionId} not found.");
+
+            return entity;
+        }
+        public async Task<QuestionViewModel> GetQuestionViewModelAsync(Guid questionId)
+        {
+            return ToViewModel(await GetQuestionAsync(questionId));
+        }
+        public async Task<List<QuestionViewModel>> GetQuestionViewModelsAsync()
+        {
+            var list = await _dbContext.Questions
+                .Include(q => q.ComponentStyle)
+                .Include(q => q.Answers)
+                .ToListAsync();
+
+            return list.Select(ToViewModel).ToList();
+        }
+        public async Task<List<QuestionViewModel>> GetQuestionsByTypeAsync(EQuestionType questionType)
+        {
+            var list = await _dbContext.Questions
+                .AsNoTracking()
+                .Where(q => q.QuestionType == questionType)
+                .Include(q => q.ComponentStyle)
+                .Include(q => q.Answers)
+                .ToListAsync();
+
+            return list.Select(ToViewModel).ToList();
+        }
+        #endregion
+
+        #region Mapping Helpers
+
+        //RANDOM GROUP NICHT VERGESSEN
+        private QuestionModel ToModel(QuestionViewModel viewModel)
+        {
+            var answerModels = viewModel.Answers != null
+            ? viewModel.Answers
+                .Where(answers => answers != null)
+                .Select(answer => new AnswerModel { Answer = answer.AnswerText })
+                .ToList()
+            : new List<AnswerModel>();
+
+            var componentStyleModel = new ComponentStyleModel();
+            ComponentStyleViewToModel(viewModel.ComponentStyle, componentStyleModel);
+
+            return new QuestionModel
+            {
+                Title = viewModel.Title,
+                QuestionType = viewModel.QuestionType,
+                TitleFieldType = viewModel.TitleFieldType,
+                IsRandomised = viewModel.IsRandomised,
+                ComponentStyle = componentStyleModel,
+                Answers = answerModels,
+            };
         }
 
-        public List<QuestionViewModel> GetQuestionsByType(EQuestionType eQuestionType)
+        //RANDOM GROUP NICHT VERGESSEN
+        private QuestionViewModel ToViewModel(QuestionModel model)
         {
-            List<QuestionViewModel> result = new List<QuestionViewModel>();
-            foreach (var question in _dbContext.Questions.Include(x => x.Answers).Where(x => x.QuestionType == eQuestionType))
-            {
-                result.Add(CreateViewModel(question));
-            }
-            return result;
-        }
+            var answers = model.Answers != null
+                ? model.Answers
+                    .Select(a => new AnswerViewModel
+                    {
+                        AnswerId = a.AnswerID,
+                        AnswerText = a.Answer
+                    })
+                    .ToList()
+                : new List<AnswerViewModel>();
 
-        private QuestionViewModel CreateViewModel(QuestionModel questionModel)
-        {
-            List<string> answers = new();
-            foreach (var answer in questionModel.Answers)
+            var componentStyleViewModel = new ComponentStyleViewModel();
+            ComponentStyleModelToView(model.ComponentStyle, componentStyleViewModel);
+
+            var viewModel = new QuestionViewModel
             {
-                answers.Add(answer.Answer);
-            }
-            QuestionViewModel questionViewModel = new QuestionViewModel()
-            {
-                Id = questionModel.Id,
-                Title = questionModel.Title,
-                QuestionType = questionModel.QuestionType,
-                ComponentColour = questionModel.ComponentColour,
-                Answers = answers
+                Id = model.Id,
+                Title = model.Title,
+                QuestionType = model.QuestionType,
+                TitleFieldType = model.TitleFieldType,
+                IsRandomised = model.IsRandomised,
+                Answers = answers,
+                ComponentStyle = componentStyleViewModel
             };
 
-            return questionViewModel;
+            return viewModel;
         }
 
-        private QuestionModel CreateModel(QuestionViewModel questionViewModel)
+        private void ComponentStyleViewToModel(ComponentStyleViewModel viewModel, ComponentStyleModel model)
         {
-            List<AnswerModel> answerModelList = new List<AnswerModel>();
-            foreach (var answer in questionViewModel.Answers)
+            model.ComponentColour = viewModel.ComponentColour;
+            model.IsLabelColourised = viewModel.IsLabelColourised;
+            model.Label = viewModel.Label;
+            model.Placeholder = viewModel.Placeholder;
+            model.TextVariant = viewModel.TextVariant;
+            model.QuestionAnswerFieldType = viewModel.QuestionAnswerFieldType;
+            model.HelperText = viewModel.HelperText;
+
+            if (viewModel.NumericFieldStyle != null)
             {
-                AnswerModel answerModel = new AnswerModel()
+                model.NumberFieldStyle = new NumberFieldStyleModel()
                 {
-                    Answer = answer,
+                    NumberType = viewModel.NumericFieldStyle.NumberType,
+                    MaxNumberFloat = viewModel.NumericFieldStyle.MaxNumberFloat,
+                    MinNumberFloat = viewModel.NumericFieldStyle.MinNumberFloat,
+                    MaxNumberInteger = viewModel.NumericFieldStyle.MaxNumberInteger,
+                    MinNumberInteger = viewModel.NumericFieldStyle.MinNumberInteger,
                 };
-                answerModelList.Add(answerModel);
             }
-            QuestionModel questionModel = new QuestionModel()
-            {
-                Title = questionViewModel.Title,
-                QuestionType = questionViewModel.QuestionType,
-                ComponentColour = questionViewModel.ComponentColour,
-                Answers = answerModelList
-            };
-            return questionModel;
         }
-
-        private QuestionModel GetQuestion(Guid questionId)
+        private void ComponentStyleModelToView(ComponentStyleModel model, ComponentStyleViewModel viewModel)
         {
-            QuestionModel questionModel = _dbContext.Questions.Include(x => x.Answers).Where(x => x.Id == questionId).FirstOrDefault();
-            return questionModel;
+            viewModel.ComponentColour = model.ComponentColour;
+            viewModel.IsLabelColourised = model.IsLabelColourised;
+            viewModel.Label = model.Label;
+            viewModel.Placeholder = model.Placeholder;
+            viewModel.TextVariant = model.TextVariant;
+            viewModel.QuestionAnswerFieldType = model.QuestionAnswerFieldType;
+            viewModel.HelperText = model.HelperText;
+
+            if (model.NumberFieldStyle != null)
+            {
+                viewModel.NumericFieldStyle = new NumericFieldStyleViewModel
+                {
+                    NumberType = model.NumberFieldStyle.NumberType,
+                    MaxNumberFloat = model.NumberFieldStyle.MaxNumberFloat,
+                    MinNumberFloat = model.NumberFieldStyle.MinNumberFloat,
+                    MaxNumberInteger = model.NumberFieldStyle.MaxNumberInteger,
+                    MinNumberInteger = model.NumberFieldStyle.MinNumberInteger
+                };
+            }
         }
+        private void SyncAnswers(QuestionModel model, IList<AnswerViewModel> updatedAnswers)
+        {
+            List<AnswerModel> removedAnswers = model.Answers
+                .Where(modelAnswers => updatedAnswers
+                .All(viewModelAnswers => viewModelAnswers.AnswerId != modelAnswers.AnswerID))
+                .ToList();
+            _dbContext.Answers.RemoveRange(removedAnswers);
+
+            foreach (var answer in updatedAnswers)
+            {
+                var existing = model.Answers
+                    .FirstOrDefault(modelAnswer => modelAnswer.AnswerID == answer.AnswerId);
+
+                if (existing != null)
+                    existing.Answer = answer.AnswerText;
+                else
+                    model.Answers.Add(new AnswerModel { Answer = answer.AnswerText });
+            }
+        }
+        #endregion
     }
 }

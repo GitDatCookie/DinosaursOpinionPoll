@@ -1,4 +1,7 @@
-﻿<DynamicComponent Type="@GetComponentType(ItemType,QuestionType)" Parameters="@(new Dictionary<string, object> { { "ViewModel", ViewModel }, {"IsItemEditable", IsItemEditable} })" />
+﻿<DynamicComponent 
+    @key=ViewModel.Id
+    Type="@GetComponentType(ItemType,QuestionType)" 
+    Parameters="@(new Dictionary<string, object> { { "ViewModel", ViewModel }, {"IsItemEditable", IsItemEditable}, {"UserViewModel", UserViewModel} })" />
 
 @code {
     [Parameter]
@@ -9,6 +12,9 @@
 
     [Parameter] 
     public QuestionaireComponentViewModelBase ViewModel { get; set; }
+
+    [Parameter]
+    public SubjectUserViewModel UserViewModel { get; set; }
 
     [Parameter]
     public bool IsItemEditable { get; set; } = false;
@@ -30,7 +36,7 @@
                 _ => throw new NotSupportedException($"Unsupported question type: {questionType}")
             },
             EItemType.FreeText => typeof(FreeText),
-            // EItemType.Image => typeof(Image),
+            EItemType.Image => typeof(Image),
             // EItemType.Video => typeof(Video),
             _ => throw new NotSupportedException($"Unsupported item type: {itemType}")
         };

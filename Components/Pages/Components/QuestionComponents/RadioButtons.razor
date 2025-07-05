@@ -3,29 +3,43 @@
 @inject IDialogService dialogService
 @inject ISnackbar snackbar
 @inherits QuestionaireComponentBase
+
 @if (!IsEditable)
 {
-    <MudPaper  Class="d-flex flex-column pa-4">
+    @if (ViewModel.TitleFieldType != ETitleFieldType.RichTextTitleField && ViewModel.TitleFieldType != ETitleFieldType.LabelAsTitleField)
+    {
         <MudText Typo="Typo.h6" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+    }
+    @if (ViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+    {
+        <MudHtmlViewer Html="@ViewModel.Title" />
+    }
+
+    <MudRadioGroup T="AnswerViewModel"
+    @bind-SelectedOption="selectedOption"
+    ValueChanged="OnSelectedOptionChanged">
         @foreach (var answer in ViewModel.Answers)
         {
-            <MudRadio T="int" Disabled="false" Style=@($"--mud-palette-action-default: {ViewModel.ComponentColour};")>
-                <MudText T="string">@answer</MudText>
+            <MudRadio T="AnswerViewModel" Value="@answer"
+            Disabled="false" 
+            Style=@($"--mud-palette-action-default: {ViewModel.ComponentStyle.ComponentColour};")>
+                <MudText>@answer.AnswerText</MudText>
             </MudRadio>
         }
-        @if (IsItemEditable)
-        {
-            <MudGrid Class="d-flex pl-5 mt-6">
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteQuestionAsync())">
-                    Delete Question
-                </MudButton>
-                <MudSpacer />
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
-                    Edit Question
-                </MudButton>
-            </MudGrid>
-        }
-    </MudPaper>
+    </MudRadioGroup>
+
+    @if (IsItemEditable)
+    {
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => DeleteQuestionAsync())">
+                Delete Question
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => IsEditable = true)" Class="ml-5">
+                Edit Question
+            </MudButton>
+        </MudGrid>
+    }
 }
 else
 {
@@ -33,11 +47,32 @@ else
 }
 
 @code {
-    [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = null!;
+    public new QuestionViewModel ViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
+    [Parameter] public bool IsItemEditable { get; set; }
 
-    [Parameter]
-    public bool IsItemEditable { get; set; }
+    private AnswerViewModel _selectedOption = null;
+
+    private AnswerViewModel selectedOption
+    {
+        get => _selectedOption;
+        set
+        {
+            if (_selectedOption != value)
+            {
+                _selectedOption = value;
+                UpdateUserSelectionSingle(_selectedOption, true);
+            }
+        }
+    }
+
+    private void OnSelectedOptionChanged(AnswerViewModel newSelection)
+    {
+        selectedOption = newSelection;
+    }
 
     private void HandleQuestionEdited(bool edit)
     {
@@ -49,3 +84,4 @@ else
         await ConfirmDeleteAsync(ViewModel.Id, EItemType.Question, EQuestionType.RadioButton);
     }
 }
+

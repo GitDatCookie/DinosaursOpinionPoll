@@ -32,7 +32,11 @@ namespace AI_Project.Services
             _dbContext.FreeTexts.Remove(GetText(textId));
             _dbContext.SaveChanges();
         }
-
+        public FreeTextModel GetText(Guid textId)
+        {
+            FreeTextModel textModel = _dbContext.FreeTexts.Where(x => x.Id == textId).FirstOrDefault();
+            return textModel;
+        }
         public FreeTextViewModel GetTextViewModel(Guid textId)
         {
             FreeTextModel textModel = _dbContext.FreeTexts.Where(x => x.Id == textId).FirstOrDefault();
@@ -68,10 +72,6 @@ namespace AI_Project.Services
             };
             return textModel;
         }
-        private FreeTextModel GetText(Guid textId)
-        {
-            FreeTextModel textModel = _dbContext.FreeTexts.Where(x => x.Id == textId).FirstOrDefault();
-            return textModel;
-        }
+
     }
 }

@@ -1,0 +1,80 @@
+﻿@using AI_Project.ViewModels
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inherits QuestionaireComponentBase
+
+@if (editable)
+{
+    <MudCard Class="ma-2" Outlined>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowLeft"
+                                   Disabled="@(PageViewModel.OrderID == 1)"
+                                   OnClick="DecreaseOrder" />
+                    <MudText>@PageViewModel.OrderID</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowRight"
+                                   Disabled="@(PageViewModel.OrderID == MaxOrder)"
+                                   OnClick="IncreaseOrder" />
+                </MudStack>
+
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <RandomGroupTemplate Questionaire="Questionaire"
+                                     PageViewModel="PageViewModel"
+                                     RandomGroupType="ERandomGroupType.RandomPageGroup" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            @foreach (var item in PageViewModel.Items)
+            {
+                <DynamicComponentComponent ItemType="@item.itemType"
+                                           QuestionType="@item.questionType"
+                                           ViewModel="@item.viewModelBase"
+                                           IsItemEditable="false" />
+            }
+        </MudCardContent>
+        <MudCardActions>
+            <!-- Additional actions, if needed -->
+        </MudCardActions>
+    </MudCard>
+}
+else
+{
+    <!-- When the page is in edit mode, use the template component -->
+    <PageTemplate PageViewModel="PageViewModel" />
+}
+
+@code {
+    [Parameter]
+    public QuestionaireViewModel Questionaire { get; set; }
+
+    [Parameter]
+    public QuestionairePageViewModel PageViewModel { get; set; } = new();
+
+    // Maximum allowed order, passed from the parent (equal to the total count)
+    [Parameter]
+    public int MaxOrder { get; set; }
+
+    // Callback to notify parent of an order change
+    [Parameter]
+    public EventCallback<int> OrderChanged { get; set; }
+
+    bool editable = true;
+
+    private async Task DecreaseOrder()
+    {
+        if (PageViewModel.OrderID > 1)
+        {
+            await OrderChanged.InvokeAsync(PageViewModel.OrderID - 1);
+        }
+    }
+
+    private async Task IncreaseOrder()
+    {
+        if (PageViewModel.OrderID < MaxOrder)
+        {
+            await OrderChanged.InvokeAsync(PageViewModel.OrderID + 1);
+        }
+    }
+}

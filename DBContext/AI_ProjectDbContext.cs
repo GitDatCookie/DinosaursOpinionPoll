@@ -18,6 +18,7 @@ namespace AI_Project.DBContext
         public DbSet<VideoModel> Videos { get; set; }
         public DbSet<FreeTextModel> FreeTexts { get; set; }
         public DbSet<ImageModel> Images { get; set; }
+        public DbSet<RandomGroupModel> RandomGroups { get; set; }
 
         // Questionaire Models
         public DbSet<QuestionairePageModel> QuestionairePages{ get; set; }

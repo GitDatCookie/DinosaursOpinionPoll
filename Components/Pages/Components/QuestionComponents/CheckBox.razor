@@ -6,12 +6,22 @@
 
 @if (!IsEditable)
 {
-    <MudPaper  Class="d-flex flex-column pa-4">
+    @if(ViewModel.TitleFieldType != ETitleFieldType.RichTextTitleField && ViewModel.TitleFieldType != ETitleFieldType.LabelAsTitleField)
+    {
         <MudText Typo="Typo.h6" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+    }
+    @if(ViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+    {
+        <MudHtmlViewer Html="@ViewModel.Title" />
+    }
         @foreach (var answer in ViewModel.Answers)
         {
-            <MudCheckBox T="bool" Disabled="false" Style=@($"--mud-palette-action-default: {ViewModel.ComponentColour};")>
-                <MudText T="string">@answer</MudText>
+            <MudCheckBox 
+                onclick="@(() => UpdateUserSelection(answer, !IsAnswerSelected(answer)))"
+                T="bool" 
+                Disabled="false" 
+                Style=@($"--mud-palette-action-default: {ViewModel.ComponentStyle.ComponentColour};")>
+                <MudText T="string">@answer.AnswerText</MudText>
             </MudCheckBox>
         }
 
@@ -28,17 +38,20 @@
             </MudGrid>
         }
 
-    </MudPaper>
+
 }
 else
 {
-    <CheckBoxTemplate ViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
+    <CheckBoxTemplate TemplateViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
 }
 
 
 @code {
-    [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = null!;
+    public new QuestionViewModel ViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
 
     [Parameter]
     public bool IsItemEditable { get; set; }

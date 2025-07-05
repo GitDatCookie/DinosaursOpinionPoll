@@ -55,7 +55,7 @@
     private async Task OnValidSubmit(EditContext editContext)
     {
         // Call your UserService to create the user
-        if (await userService.CreateUserModelAsync(_model))
+        if (await userService.CreateAdminUserModelAsync(_model))
         {
             snackbar.Add("Admin was created successfully.", Severity.Success);
         }

@@ -8,7 +8,7 @@ namespace AI_Project.Models.UserModels
     {
         [Key]
         public Guid UserId { get; set; }
-        public bool ControlGroup { get; set; }
+        public bool IsTreatmentGroup { get; set; }
 
         #region ForeignTables
         public ICollection<AnswerModel> Answers { get; set; } = new List<AnswerModel>();

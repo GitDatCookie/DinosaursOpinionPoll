@@ -1,28 +1,53 @@
-﻿<MudText Typo="Typo.h6" Class="mb-4">@Question</MudText>
+﻿@inherits QuestionaireComponentBase
 
-<!-- Dropdown using sorted items -->
-<MudSelect @bind-Value="ChoosenDropDownItem">
-    @foreach (var item in DropDownItems)
+@if (ViewModel.TitleFieldType != ETitleFieldType.RichTextTitleField && ViewModel.TitleFieldType != ETitleFieldType.LabelAsTitleField)
+{
+    <MudText Typo="Typo.h6" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+}
+@if (ViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+{
+    <MudHtmlViewer Html="@ViewModel.Title" />
+}
+
+<MudSelect Class="@(ViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
+           T="AnswerViewModel"
+           Label="@ViewModel.ComponentStyle.Label"
+           Variant="@ViewModel.ComponentStyle.TextVariant"
+           Placeholder="@ViewModel.ComponentStyle.Placeholder"
+           HelperText="@ViewModel.ComponentStyle.HelperText"
+           Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")>
+    @foreach (var answer in ViewModel.Answers)
     {
-        <MudSelectItem Value="@item">@item</MudSelectItem>
+        <MudSelectItem Value="answer">@answer.AnswerText</MudSelectItem>
     }
 </MudSelect>
 
 @code {
-    [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = new();
+    public new QuestionViewModel ViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
+
     [Parameter]
     public bool IsItemEditable { get; set; }
 
-    [Parameter]
-    public string Question { get; set; } = null!;
+    private void HandleQuestionEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
 
-    [Parameter]
-    public List<string> DropDownItems { get; set; } = null!;
-
-    [Parameter]
-    public string ChoosenDropDownItem { get; set; } = null!;
+    private async Task DeleteQuestionAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EItemType.Question, EQuestionType.MultiLine);
+    }
 }
+
+<style>
+    .label-custom-color .mud-input-label {
+        color: @ComponentColour !important;
+    }
+</style>
 
 
 

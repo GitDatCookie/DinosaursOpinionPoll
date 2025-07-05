@@ -1,4 +1,5 @@
-﻿using AI_Project.Models.OrderModels;
+﻿using AI_Project.Enums;
+using AI_Project.Models.OrderModels;
 using System.ComponentModel.DataAnnotations;
 
 namespace AI_Project.ViewModels.QuestionaireComponentViewModels
@@ -8,7 +9,10 @@ namespace AI_Project.ViewModels.QuestionaireComponentViewModels
         [Key]
         public Guid Id { get; set; }
         public string Title { get; set; }
+        public ETitleFieldType TitleFieldType { get; set; }
         public OrderModel? Order { get; set; }
+        public bool IsRandomised { get; set; }
         public RandomGroupViewModel RandomGroup{ get; set; }
+        public EItemType ItemType { get; set; }
     }
 }

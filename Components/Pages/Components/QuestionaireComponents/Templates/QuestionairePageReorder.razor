@@ -1,0 +1,94 @@
+﻿@page "/questionairePage-reorder/{PublicToken}"
+
+@using AI_Project.Models.OrderModels
+@using MudBlazor
+
+@inject IQuestionaireService QuestionaireService
+
+@if (questionaireViewModel != null)
+{
+    <!-- Control to choose the number of columns for the pages grid -->
+    <MudNumericField @bind-Value="Columns"
+    Label="Grid Columns"
+    Min="1"
+    Max="5"
+    Immediate="true"
+    Class="mb-4" />
+
+    <!-- Full grid of page components -->
+    <MudPaper Class="pa-4" Elevation="1">
+        <MudText Typo="Typo.h6">Pages</MudText>
+        <MudGrid>
+            @foreach (var page in questionaireViewModel.PageList)
+            {
+                <MudItem xs="@ColumnWidth">
+                    <QuestionairePageTemplate PageViewModel="page"
+                    MaxOrder="@questionaireViewModel.PageList.Count"
+                    OrderChanged="@(newOrder => HandleOrderChanged(page, newOrder))" 
+                    Questionaire="questionaireViewModel"/>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+
+    <MudText>PageList count: @questionaireViewModel.PageList.Count</MudText>
+}
+
+@code {
+    [Parameter]
+    public string PublicToken { get; set; }
+    private QuestionaireViewModel? questionaireViewModel { get; set; }
+
+    // Number of items per row with a base value of 3.
+    private int Columns { get; set; } = 3;
+
+    // Compute the column width based on MudBlazor's 12-column layout.
+    private int ColumnWidth => 12 / Columns;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(!string.IsNullOrEmpty(PublicToken))
+        {
+            questionaireViewModel = await QuestionaireService.GetQuestionaireViewModelByTokenAsync(PublicToken);
+        }
+    }
+
+    private void HandleOrderChanged(QuestionairePageViewModel changedPage, int newOrder)
+    {
+        int oldOrder = changedPage.OrderID;
+        if (newOrder == oldOrder)
+            return;
+
+        int count = questionaireViewModel.PageList.Count;
+        if (newOrder < 1 || newOrder > count)
+            return;
+
+        if (newOrder > oldOrder)
+        {
+            // For a move down: shift pages in between upward (decrement their OrderID)
+            foreach (var page in questionaireViewModel.PageList)
+            {
+                if (page.OrderID > oldOrder && page.OrderID <= newOrder)
+                {
+                    page.OrderID--;
+                }
+            }
+        }
+        else if (newOrder < oldOrder)
+        {
+            // For a move up: shift pages in between downward (increment their OrderID)
+            foreach (var page in questionaireViewModel.PageList)
+            {
+                if (page.OrderID >= newOrder && page.OrderID < oldOrder)
+                {
+                    page.OrderID++;
+                }
+            }
+        }
+        changedPage.OrderID = newOrder;
+
+        // Resort the list by OrderID
+        questionaireViewModel.PageList = questionaireViewModel.PageList.OrderBy(p => p.OrderID).ToList();
+        StateHasChanged();
+    }
+}

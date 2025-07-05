@@ -4,12 +4,12 @@
 @if (!isEditing)
 {
     <MudStack Row Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Spacing="2">
-        <MudCheckBox T="bool" @bind-Value="IsRandom" Label="Randomise?" />
+        <MudCheckBox T="bool" @bind-Value="IsRandomBound" Label="Randomise?" />
 
-        @if (IsRandom)
+        @if (IsRandomBound)
         {
-            <MudSelect T="RandomGroupViewModel" @bind-Value="SelectedRandomGroup" Variant="Variant.Outlined" Label="Group">
-                @foreach (var group in RandomGroups)
+            <MudSelect T="RandomGroupViewModel" @bind-Value="SelectedRandomGroup" Variant="Variant.Outlined" Label="Set the same group for items you want to randomise together.">
+                @foreach (var group in Questionaire.RandomGroups)
                 {
                     <MudSelectItem Value="@group">
                         <MudStack Row AlignItems="AlignItems.Center" Style="width:100%;">
@@ -66,38 +66,97 @@ else
     public ERandomGroupType RandomGroupType { get; set; }
 
     [Parameter]
-    public List<RandomGroupViewModel> RandomGroups { get; set; }
+    public QuestionaireViewModel Questionaire { get; set; }
 
     [Parameter]
     public EventCallback<List<RandomGroupViewModel>> RandomGroupsChanged { get; set; }
 
-    public RandomGroupViewModel SelectedRandomGroup { get; set; } = new();
-
-    protected override void OnInitialized()
+    private RandomGroupViewModel selectedRandomGroup = new();
+    public RandomGroupViewModel SelectedRandomGroup
     {
-        if (RandomGroups?.Count != 0)
+        get => selectedRandomGroup;
+        set
         {
-            RandomGroupViewModel randomGroup = new()
+            if (selectedRandomGroup != value)
             {
-                GroupName = "Group 1",
-                RandomGroupType = RandomGroupType
-            };
-            RandomGroups = new();
-            RandomGroups.Add(randomGroup);
-            SelectedRandomGroup = randomGroup;
+                selectedRandomGroup = value;
+
+                switch(RandomGroupType)
+                {
+                    case ERandomGroupType.RandomQuestionairePageComponentGroup:
+                        if (ViewModel != null)
+                        {
+                            ViewModel.RandomGroup = value;
+                        }
+                        break;
+                    case ERandomGroupType.RandomPageGroup:
+                        if (PageViewModel != null)
+                        {
+                            PageViewModel.RandomGroup = value;
+                        }
+                        break;
+                }
+            }
         }
     }
 
-    private bool IsRandom { get; set; }
-    private string randomGroup { get; set; }
+    private bool IsRandomBound
+    {
+        get => (RandomGroupType == ERandomGroupType.RandomQuestionairePageComponentGroup)
+                    ? ViewModel.IsRandomised
+                    : PageViewModel.IsRandomised;
+        set
+        {
+            switch(RandomGroupType)
+            {
+                case ERandomGroupType.RandomQuestionairePageComponentGroup:
+                    ViewModel.IsRandomised = value;
+                    break;
+                case ERandomGroupType.RandomPageGroup:
+                    PageViewModel.IsRandomised = value;
+                    break;
+            }
+        }
+    }
 
+    protected override void OnParametersSet()
+    {
+        if (Questionaire != null)
+        {
+            if (Questionaire.RandomGroups == null)
+            {
+                Questionaire.RandomGroups = new List<RandomGroupViewModel>();
+            }
+        }
+
+        if (!Questionaire.RandomGroups.Any())
+        {
+            var defaultGroup = new RandomGroupViewModel
+                {
+                    GroupName = "Group 1",
+                    RandomGroupType = RandomGroupType
+                };
+            Questionaire.RandomGroups.Add(defaultGroup);
+            SelectedRandomGroup = defaultGroup;
+        }
+        else
+        {
+            switch(RandomGroupType)
+            {
+                case ERandomGroupType.RandomQuestionairePageComponentGroup:
+                    SelectedRandomGroup = ViewModel.RandomGroup != null ? ViewModel.RandomGroup : Questionaire.RandomGroups[0];
+                    break;
+                case ERandomGroupType.RandomPageGroup:
+                    SelectedRandomGroup = PageViewModel.RandomGroup != null ? PageViewModel.RandomGroup : Questionaire.RandomGroups[0];
+                    break;
+            }
+        }
+    }
 
     private bool isEditing = false;
     private RandomGroupViewModel? editingGroup = null;
     private string editedGroupName { get; set; } = string.Empty;
 
-    // Called when the user clicks the edit icon on an item.
-    // Switches to edit mode and pre-populates the editing field.
     private void StartEditingGroup(RandomGroupViewModel group)
     {
         isEditing = true;
@@ -105,36 +164,32 @@ else
         editedGroupName = group.GroupName;
     }
 
-    // Called when the Save icon is pressed during edit mode.
-    // Updates the group name (if any changes) and reverts to normal mode.
     private void SaveEditedGroup()
     {
         if (editingGroup is not null && !string.IsNullOrWhiteSpace(editedGroupName))
         {
-            int index = RandomGroups.IndexOf(editingGroup);
+            int index = Questionaire.RandomGroups.IndexOf(editingGroup);
 
             if (index != -1)
             {
-                // Update the group name in the list.
-                RandomGroups[index].GroupName = editedGroupName;
-                // Also update the SelectedRandomGroup if it is the one being edited.
+                Questionaire.RandomGroups[index].GroupName = editedGroupName;
                 if (SelectedRandomGroup == editingGroup)
                 {
-                    SelectedRandomGroup = RandomGroups[index];
+                    SelectedRandomGroup = Questionaire.RandomGroups[index];
                 }
             }
         }
-        ExitEditingMode();
-        RandomGroupsChanged.InvokeAsync(RandomGroups);
+        ExitEditingMode(); 
+        StateHasChanged();
+        RandomGroupsChanged.InvokeAsync(Questionaire.RandomGroups);
+
     }
 
-    // Called when the Delete icon is pressed during normal mode for an item.
-    // If that group is currently being edited, editing mode is also canceled.
     private void DeleteGroup(RandomGroupViewModel group)
     {
-        if (RandomGroups.Contains(group))
+        if (Questionaire.RandomGroups.Contains(group))
         {
-            RandomGroups.Remove(group);
+            Questionaire.RandomGroups.Remove(group);
             if (SelectedRandomGroup == group)
             {
                 SelectedRandomGroup = new();
@@ -144,13 +199,11 @@ else
         {
             ExitEditingMode();
         }
-        RandomGroupsChanged.InvokeAsync(RandomGroups);
+        RandomGroupsChanged.InvokeAsync(Questionaire.RandomGroups);
     }
 
-    // Cancels editing – no changes are saved.
     private void CancelEditingMode() => ExitEditingMode();
 
-    // Reset the edit mode state.
     private void ExitEditingMode()
     {
         isEditing = false;
@@ -158,18 +211,14 @@ else
         editedGroupName = string.Empty;
     }
 
-    // Shortcut handler for the Cancel icon in edit mode.
     private void CancelEditingGroup() => CancelEditingMode();
 
-    // Called when the plus button is clicked.
-    // Creates a new group with a default name and immediately enters edit mode.
     private void AddNewGroup()
     {
-        // Create a new group model with a default name.
-        var newGroup = new RandomGroupViewModel { GroupName = $"Group {RandomGroups.Count + 1}" };
-        RandomGroups.Add(newGroup);
+        var newGroup = new RandomGroupViewModel { GroupName = $"Group {Questionaire.RandomGroups.Count + 1}" };
+        Questionaire.RandomGroups.Add(newGroup);
         SelectedRandomGroup = newGroup;
         StartEditingGroup(newGroup);
-        RandomGroupsChanged.InvokeAsync(RandomGroups);
+        RandomGroupsChanged.InvokeAsync(Questionaire.RandomGroups);
     }
 }

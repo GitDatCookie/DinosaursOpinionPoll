@@ -2,6 +2,6 @@
 {
     public class ImageViewModel : QuestionaireComponentViewModelBase
     {
-        public string Path { get; set; } = null!;
+        public string Data { get; set; } = null!;
     }
 }

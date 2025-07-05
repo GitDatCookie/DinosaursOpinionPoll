@@ -1,6 +1,7 @@
 ﻿using AI_Project.Models.OrderModels;
 using AI_Project.Models.QuestionaireComponentModels;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AI_Project.Models.UserModels.AdminUserComponentModels
 {
@@ -11,8 +12,6 @@ namespace AI_Project.Models.UserModels.AdminUserComponentModels
         public string QuestionaireTitle { get; set; }
         public string PublicToken { get; set; }
 
-        public virtual ICollection<RandomGroupModel> RandomComponentGroups { get; set; }
-        public virtual ICollection<RandomGroupModel> RandomPageGroups { get; set; }
         public virtual ICollection<QuestionairePageModel> PageList { get; set; }
 
     }

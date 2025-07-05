@@ -8,7 +8,8 @@ namespace AI_Project.ViewModels
     {
         public int OrderID { get; set; }
         public bool IsRandomised { get; set; }
-        public List<(QuestionaireComponentViewModelBase, EItemType, EQuestionType)> Items { get; set; }
+        public OrderModel? Order{ get; set; }
+        public List<(QuestionaireComponentViewModelBase viewModelBase, EItemType itemType, EQuestionType questionType)> Items { get; set; }
         public RandomGroupViewModel RandomGroup { get; set; }
     }
 }

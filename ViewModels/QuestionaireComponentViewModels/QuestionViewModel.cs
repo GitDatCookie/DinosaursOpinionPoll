@@ -1,4 +1,5 @@
 ﻿using AI_Project.Enums;
+using MudBlazor;
 using System.ComponentModel.DataAnnotations;
 
 namespace AI_Project.ViewModels.QuestionaireComponentViewModels
@@ -8,10 +9,9 @@ namespace AI_Project.ViewModels.QuestionaireComponentViewModels
         [Required]
         public EQuestionType QuestionType { get; set; }
 
-        public string ComponentColour { get; set; }
-
         #region ForeignTables
-        public List<string> Answers { get; set; } = null!;
+        public ComponentStyleViewModel ComponentStyle { get; set; } = new();
+        public List<AnswerViewModel> Answers { get; set; } = null!;
         #endregion
     }
 }

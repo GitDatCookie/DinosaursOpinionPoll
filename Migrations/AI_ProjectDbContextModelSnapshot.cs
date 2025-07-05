@@ -22,7 +22,70 @@ namespace AI_Project.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AI_Project.Models.OrderModels.RandomGroup", b =>
+            modelBuilder.Entity("AI_Project.Models.ComponentStyleModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ComponentColour")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HelperText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsLabelColourised")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Label")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("NumberFieldStyleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Placeholder")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuestionAnswerFieldType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TextVariant")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NumberFieldStyleId");
+
+                    b.ToTable("ComponentStyleModel");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.NumberFieldStyleModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<float?>("MaxNumberFloat")
+                        .HasColumnType("real");
+
+                    b.Property<int?>("MaxNumberInteger")
+                        .HasColumnType("int");
+
+                    b.Property<float?>("MinNumberFloat")
+                        .HasColumnType("real");
+
+                    b.Property<int?>("MinNumberInteger")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NumberType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NumberFieldStyleModel");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.OrderModels.RandomGroupModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -32,22 +95,12 @@ namespace AI_Project.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("QuestionaireModelQuestionaireId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("QuestionaireModelQuestionaireId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("RandomGroupType")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("QuestionaireModelQuestionaireId");
-
-                    b.HasIndex("QuestionaireModelQuestionaireId1");
-
-                    b.ToTable("RandomGroup");
+                    b.ToTable("RandomGroups");
                 });
 
             modelBuilder.Entity("AI_Project.Models.QuestionaireComponentModels.QuestionaireComponentModelBase", b =>
@@ -61,6 +114,12 @@ namespace AI_Project.Migrations
                         .HasMaxLength(34)
                         .HasColumnType("nvarchar(34)");
 
+                    b.Property<int>("GroupType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRandomised")
+                        .HasColumnType("bit");
+
                     b.Property<Guid?>("QuestionairePageModelPageID")
                         .HasColumnType("uniqueidentifier");
 
@@ -70,6 +129,9 @@ namespace AI_Project.Migrations
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TitleFieldType")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -160,7 +222,7 @@ namespace AI_Project.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("ControlGroup")
+                    b.Property<bool>("IsTreatmentGroup")
                         .HasColumnType("bit");
 
                     b.HasKey("UserId");
@@ -228,7 +290,7 @@ namespace AI_Project.Migrations
                 {
                     b.HasBaseType("AI_Project.Models.QuestionaireComponentModels.QuestionaireComponentModelBase");
 
-                    b.Property<string>("Path")
+                    b.Property<string>("Data")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -242,14 +304,15 @@ namespace AI_Project.Migrations
                     b.Property<Guid?>("AdminUserModelLoginId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ComponentColour")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("ComponentStyleId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("QuestionType")
                         .HasColumnType("int");
 
                     b.HasIndex("AdminUserModelLoginId");
+
+                    b.HasIndex("ComponentStyleId");
 
                     b.HasDiscriminator().HasValue("QuestionModel");
                 });
@@ -262,24 +325,16 @@ namespace AI_Project.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.ToTable("QuestionaireComponentModelBase", t =>
-                        {
-                            t.Property("Path")
-                                .HasColumnName("VideoModel_Path");
-                        });
-
                     b.HasDiscriminator().HasValue("VideoModel");
                 });
 
-            modelBuilder.Entity("AI_Project.Models.OrderModels.RandomGroup", b =>
+            modelBuilder.Entity("AI_Project.Models.ComponentStyleModel", b =>
                 {
-                    b.HasOne("AI_Project.Models.UserModels.AdminUserComponentModels.QuestionaireModel", null)
-                        .WithMany("RandomComponentGroups")
-                        .HasForeignKey("QuestionaireModelQuestionaireId");
+                    b.HasOne("AI_Project.Models.NumberFieldStyleModel", "NumberFieldStyle")
+                        .WithMany()
+                        .HasForeignKey("NumberFieldStyleId");
 
-                    b.HasOne("AI_Project.Models.UserModels.AdminUserComponentModels.QuestionaireModel", null)
-                        .WithMany("RandomPageGroups")
-                        .HasForeignKey("QuestionaireModelQuestionaireId1");
+                    b.Navigation("NumberFieldStyle");
                 });
 
             modelBuilder.Entity("AI_Project.Models.QuestionaireComponentModels.QuestionaireComponentModelBase", b =>
@@ -288,8 +343,8 @@ namespace AI_Project.Migrations
                         .WithMany("Items")
                         .HasForeignKey("QuestionairePageModelPageID");
 
-                    b.HasOne("AI_Project.Models.OrderModels.RandomGroup", "RandomGroup")
-                        .WithMany()
+                    b.HasOne("AI_Project.Models.OrderModels.RandomGroupModel", "RandomGroup")
+                        .WithMany("QuestionaireComponents")
                         .HasForeignKey("RandomGroupId");
 
                     b.Navigation("RandomGroup");
@@ -308,8 +363,8 @@ namespace AI_Project.Migrations
                         .WithMany("PageList")
                         .HasForeignKey("QuestionaireModelQuestionaireId");
 
-                    b.HasOne("AI_Project.Models.OrderModels.RandomGroup", "RandomGroup")
-                        .WithMany()
+                    b.HasOne("AI_Project.Models.OrderModels.RandomGroupModel", "RandomGroup")
+                        .WithMany("QuestionairePages")
                         .HasForeignKey("RandomGroupId");
 
                     b.Navigation("RandomGroup");
@@ -346,15 +401,26 @@ namespace AI_Project.Migrations
                     b.HasOne("AI_Project.Models.UserModels.AdminUserModel", null)
                         .WithMany("Questions")
                         .HasForeignKey("AdminUserModelLoginId");
+
+                    b.HasOne("AI_Project.Models.ComponentStyleModel", "ComponentStyle")
+                        .WithMany()
+                        .HasForeignKey("ComponentStyleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ComponentStyle");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.OrderModels.RandomGroupModel", b =>
+                {
+                    b.Navigation("QuestionaireComponents");
+
+                    b.Navigation("QuestionairePages");
                 });
 
             modelBuilder.Entity("AI_Project.Models.UserModels.AdminUserComponentModels.QuestionaireModel", b =>
                 {
                     b.Navigation("PageList");
-
-                    b.Navigation("RandomComponentGroups");
-
-                    b.Navigation("RandomPageGroups");
                 });
 
             modelBuilder.Entity("AI_Project.Models.UserModels.AdminUserComponentModels.QuestionairePageModel", b =>

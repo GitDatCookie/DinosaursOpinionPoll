@@ -22,7 +22,7 @@ namespace AI_Project.Services
             _authService = authService;
         }
 
-        public async Task<bool> CreateUserModelAsync(AdminUserViewModel user)
+        public async Task<bool> CreateAdminUserModelAsync(AdminUserViewModel user)
         {
             try
             {
@@ -87,9 +87,40 @@ namespace AI_Project.Services
             _authService.CurrentUser = new ClaimsPrincipal(new ClaimsIdentity());
         }
 
-        public Task UpdateUserModelAsync(AdminUserViewModel user)
+        private bool SetControlGroup()
+        {
+            var users = GetSubjectUsers();
+            int controlCount = users.Count(u => !u.IsTreatmentGroup);
+            int treatmentCount = users.Count(u => u.IsTreatmentGroup);
+            return treatmentCount <= controlCount;
+        }
+        public SubjectUserViewModel CreateSubjectUser()
+        {
+            SubjectUserModel subjectUserModel = new SubjectUserModel
+            {
+                IsTreatmentGroup = SetControlGroup()
+            };
+
+            _dbContext.Add(subjectUserModel);
+            _dbContext.SaveChanges();
+
+            return new SubjectUserViewModel
+            {
+                UserId = subjectUserModel.UserId,
+                IsTreatmentGroup = subjectUserModel.IsTreatmentGroup
+            };
+        }
+
+
+        public Task UpdateAdminUserModelAsync(AdminUserViewModel user)
         {
             throw new NotImplementedException();
+        }
+
+        private List<SubjectUserModel> GetSubjectUsers()
+        {
+            List<SubjectUserModel> subjectUsers = _dbContext.SubjectUsers.ToList();
+            return subjectUsers;
         }
 
         private string PasswordHash(string password)

@@ -46,6 +46,8 @@ builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IAIService, AIService>();
 builder.Services.AddScoped<ITextService, TextService>();
 builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IQuestionaireService, QuestionaireService>();
+builder.Services.AddScoped<IQuestionaireComponentService, QuestionaireComponentService>();
 builder.Services.AddScoped<IEventNotificationService, EventNotificationService>();
 builder.Services.AddScoped<IComponentFactory, ComponentFactory>();
 

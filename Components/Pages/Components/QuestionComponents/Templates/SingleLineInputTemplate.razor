@@ -1,38 +1,163 @@
-﻿<MudPaper  Class="pa-4">
-    <MudText Typo="Typo.h6" Class="mb-4">SingleLine TextField Question.</MudText>
+﻿@inherits QuestionaireComponentBase
 
-    <MudText Typo="Typo.subtitle1" Class="mb-2">Set your Question.</MudText>
-    <MudTextField @bind-Value="QuestionValue" Label="Question" Variant="Variant.Text" Placeholder="Type in your Question..."></MudTextField>
+<MudPaper  Class="pa-4">
+    <MudForm @ref=mudForm>
+        <MudStack Row>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+        </MudStack>
 
-    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Configure your Textfield.</MudText>
+        <MudStack Row>
+            @if (!IsRichText && !IsLabel)
+            {
+                <MudTextField @bind-Value="Title"
+                Placeholder="Type in your Question..."
+                Required
+                RequiredError="Question is Required"
+                Immediate />
+            }
+            @if (IsRichText)
+            {
+                <MudHtmlEditor @bind-Html=@Title style="width:100%">
+                    <MudHtmlToolbarOptions InsertImage="false" />
+                </MudHtmlEditor>
+                @if (isSubmitted && string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        Question is Required
+                    </MudText>
+                }
+            }
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the label.</MudText>
-    <MudTextField @bind-Value="LabelValue" Label="Label" Variant="Variant.Text" Placeholder="Type in Textfields Label..."></MudTextField>
+            <MudIconButton Class="float-end"
+            Icon="@Icons.Material.Filled.Settings"
+            Color="Color.Primary"
+            OnClick="@(()=>SetQuestionOptionsAsync(EQuestionAnswerFieldType.AnswerField, TemplateViewModel))" />
+        </MudStack>
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the placeholder.</MudText>
-    <MudTextField @bind-Value="PlaceHolderValue" Label="PlaceHolder" Variant="Variant.Text" Placeholder="Type in Placeholders Value..."></MudTextField>
+        <MudTextField Class="@(TemplateViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
+        T="string"
+        Label="@TemplateViewModel.ComponentStyle.Label"
+        Variant="@TemplateViewModel.ComponentStyle.TextVariant"
+        Placeholder="@TemplateViewModel.ComponentStyle.Placeholder"
+        HelperText="@TemplateViewModel.ComponentStyle.HelperText"
+        Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour}; .label-custom-color .mud-input-label {{ color: {ComponentColour}; }}")>
+        </MudTextField>
 
-    <MudText Typo="Typo.subtitle2" Class="mb-2 mt-2">Set the look.</MudText>
-    <MudChipSet T="Variant" @bind-SelectedValue="QuestionOutline" CheckMark SelectionMode="SelectionMode.SingleSelection">
-        <MudChip Variant=Variant.Text Color="Color.Primary" Value="@Variant.Text">Clean</MudChip>
-        <MudChip Variant=Variant.Filled  Color="Color.Primary" Value="@Variant.Filled">Filled</MudChip>
-        <MudChip Variant=Variant.Outlined  Color="Color.Primary" Value="@Variant.Outlined">Outlined</MudChip>
-    </MudChipSet>
-
-    <MudText Typo="Typo.subtitle1" Class="mb-2 mt-2">Save the result.</MudText>
-
-    <MudTextField @bind-Value="AnswerValue" Label="@LabelValue" Variant="@QuestionOutline" Placeholder="@PlaceHolderValue"></MudTextField>
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                    Save Question
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                    Update Question
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
 </MudPaper>
 
 
 @code
 {
-    [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = new();
+    [Parameter, EditorRequired]
+    public new QuestionViewModel TemplateViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
 
-    public string QuestionValue { get; set; }
-    public string PlaceHolderValue { get; set; }
-    public string AnswerValue { get; set; }
-    public string LabelValue { get; set; }
-    public Variant QuestionOutline { get; set; }
+    private MudForm mudForm;
+    private bool isSubmitted;
+
+
+
+    protected override void OnInitialized()
+    {
+        TemplateViewModel ??= new QuestionViewModel();
+        IsEditable = TemplateViewModel?.Id != Guid.Empty;
+        SetFieldFlags(TemplateViewModel.TitleFieldType);
+        Title = TemplateViewModel.Title;
+        ComponentColour = TemplateViewModel.ComponentStyle?.ComponentColour ?? ComponentColour;
+    }
+
+    private async void SaveQuestion()
+    {
+        isSubmitted = true;
+        await mudForm.Validate();
+        if (string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+        {
+            mudForm.IsValid = false;
+            return;
+        }
+
+        if (mudForm.IsValid)
+        {
+            QuestionViewModel question = new()
+                {
+                    QuestionType = EQuestionType.SingleLine,
+                    Title = Title,
+                    TitleFieldType = TemplateViewModel.TitleFieldType,
+                    ComponentStyle = CreateStyleModel()
+                };
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+                SanitiseRichText(TemplateViewModel.Title);
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.LabelAsTitleField)
+                question.Title = TemplateViewModel.ComponentStyle.Label;
+
+            await SaveQuestionaireComponentModelAsync(question);
+        }
+    }
+
+    private async Task EditQuestion()
+    {
+        isSubmitted = true;
+        await mudForm.Validate();
+        if (string.IsNullOrWhiteSpace(Title))
+        {
+            mudForm.IsValid = false;
+            return;
+        }
+        if(mudForm.IsValid)
+        {
+            TemplateViewModel.Title = Title;
+            TemplateViewModel.ComponentStyle = CreateStyleModel();
+
+            if (TemplateViewModel.TitleFieldType == ETitleFieldType.LabelAsTitleField)
+                TemplateViewModel.Title = TemplateViewModel.ComponentStyle.Label;
+
+            await EditQuestionaireComponentModelAsync(TemplateViewModel);
+        }
+
+    }
+
+    private ComponentStyleViewModel CreateStyleModel() =>
+    new ComponentStyleViewModel
+        {
+            QuestionAnswerFieldType = EQuestionAnswerFieldType.AnswerField,
+            ComponentColour = ComponentColour,
+            IsLabelColourised = TemplateViewModel.ComponentStyle.IsLabelColourised,
+            TextVariant = TemplateViewModel.ComponentStyle.TextVariant,
+            HelperText = TemplateViewModel.ComponentStyle.HelperText,
+            Label = TemplateViewModel.ComponentStyle.Label,
+            Placeholder = TemplateViewModel.ComponentStyle.Placeholder
+        };
+
+    private void SetFieldFlags(ETitleFieldType type)
+    {
+        IsRichText = type == ETitleFieldType.RichTextTitleField;
+        IsLabel = type == ETitleFieldType.LabelAsTitleField;
+    }
 }
+
+<style>
+    .label-custom-color .mud-input-label {
+        color: @ComponentColour !important;
+    }
+</style>

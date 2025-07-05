@@ -1,6 +1,51 @@
-﻿<MudText> Image</MudText>
+﻿@inherits QuestionaireComponentBase
 
-@code{
+@if (!IsEditable)
+{
+    <MudPaper Class="d-flex justify-center align-center mt-4" Style="width: 100%; overflow: auto;">
+        <MudImage Src="@ViewModel.Data"
+                  ObjectFit="ObjectFit.ScaleDown"
+                  ObjectPosition="ObjectPosition.Center"
+                  Alt="Image"
+                  Style="max-width: 100%; height: auto;" />
+    </MudPaper>
+
+    @if (IsItemEditable)
+    {
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteImageAsync())">
+                Delete Question
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
+                Edit Question
+            </MudButton>
+        </MudGrid>
+    }
+}
+else
+{
+    <ImageTemplate TemplateViewModel="ViewModel" OnItemEdited="HandleItemEdited" />
+}
+
+
+@code {
+    public new ImageViewModel ViewModel
+    {
+        get => (ImageViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
+
     [Parameter]
-    public ImageViewModel ViewModel { get; set; } = new();
+    public bool IsItemEditable { get; set; }
+
+    private void HandleItemEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private async Task DeleteImageAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EItemType.Image, EQuestionType.None);
+    }
 }

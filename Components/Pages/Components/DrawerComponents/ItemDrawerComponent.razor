@@ -1,6 +1,7 @@
 ﻿@using AI_Project.Enums
 @using AI_Project.ViewModels
 @using System.Text.RegularExpressions
+@using System.Net
 @inject IQuestionService questionService
 @inject IVideoService videoService
 @inject IImageService imageService
@@ -16,7 +17,7 @@
     <MudTooltip ShowOnHover Color=Color.Inherit Arrow="true" Placement="Placement.Right" Style="max-width: 500px" Class="border-2 border-dotted mud-border-primary" Delay="500" >
         <ChildContent>
             <MudListItem T=string
-            Text="@GeneratePreview(item.Title)"
+            Text="@GeneratePreview(item)"
             Icon="@Icon"
             onclick="@(()=>OnItemSelected.InvokeAsync((item, ItemType, QuestionType)))" 
             />
@@ -24,7 +25,7 @@
         </ChildContent>
         <TooltipContent>
             <MudText Color=Color.Primary Align="Align.Start" Typo="Typo.subtitle2" Class="mb-2">Title:</MudText>
-            <MudText Color=Color.Inherit Align="Align.Start" Typo="Typo.body2" Style="max-width: 500px">@item.Title</MudText>
+            <MudText Color=Color.Inherit Align="Align.Start" Typo="Typo.body2" Style="max-width: 500px">@CleanRichText(item)</MudText>
         </TooltipContent>
     </MudTooltip>
 }
@@ -50,14 +51,28 @@
         StateHasChanged();
     }
 
-    public string GeneratePreview(string itemTitle)
+    public string GeneratePreview(QuestionaireComponentViewModelBase item)
     {
-        return itemTitle.Count() > 33
-        ? $"{itemTitle.Substring(0, 32).ToString()} ..."
-        : itemTitle;
+        string titleField = CleanRichText(item);
+
+        return titleField.Count() > 33
+        ? $"{titleField.Substring(0, 32).ToString()} ..."
+        : titleField;
     }
 
-    public void LoadQuestionaireItems()
+    public string CleanRichText(QuestionaireComponentViewModelBase item)
+    {
+        string titleField = item.Title;
+        if (item.TitleFieldType == ETitleFieldType.RichTextTitleField)
+        {
+            string regex = Regex.Replace(titleField, "<.*?>", string.Empty);
+            string cleanedText = WebUtility.HtmlDecode(regex);
+            titleField = cleanedText;
+        }
+        return titleField;
+    }
+
+    public async Task LoadQuestionaireItems()
     {
         switch (ItemType)
         {
@@ -77,9 +92,10 @@
                                          .ToList();
                 break;
             case EItemType.Question:
-                ItemModel = questionService.GetQuestionsByType(QuestionType)
-                                           .Cast<QuestionaireComponentViewModelBase>()
-                                           .ToList();
+                var questions = await questionService.GetQuestionsByTypeAsync(QuestionType);
+                ItemModel = questions
+                .Cast<QuestionaireComponentViewModelBase>()
+                .ToList();
                 break;
             default:
                 ItemModel = new List<QuestionaireComponentViewModelBase>();

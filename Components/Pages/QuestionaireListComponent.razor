@@ -1,0 +1,33 @@
+﻿@using AI_Project.Models.OrderModels
+@using MudBlazor
+
+@inject IUserService UserService
+@inject IQuestionaireService QuestionaireService
+
+@if(QuestionaireViewModels != null && QuestionaireViewModels.Count != 0)
+{
+    <MudContainer>
+        <MudList T="QuestionaireViewModel">
+            @foreach (var questionaire in QuestionaireViewModels)
+            {
+                <MudListItem OnClick="@(()=>HandleQuestionaireSelected(questionaire))">
+                    @questionaire.QuestionaireTitle
+                </MudListItem>
+            }
+        </MudList>
+    </MudContainer>
+}
+@code {
+    public List<QuestionaireViewModel> QuestionaireViewModels { get; set; }
+    public EventCallback<QuestionaireViewModel> OnQuestionaireChosen { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        QuestionaireViewModels = await QuestionaireService.GetQuestionairesAsync();
+    }
+
+    private async Task HandleQuestionaireSelected(QuestionaireViewModel questionaire)
+    {
+        await OnQuestionaireChosen.InvokeAsync(questionaire);
+    }
+}

@@ -26,4 +26,11 @@
   <ItemGroup>
     <Folder Include="wwwroot\uploads\" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <Content Update="Components\Pages\QuestionaireListComponent.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
 </Project>

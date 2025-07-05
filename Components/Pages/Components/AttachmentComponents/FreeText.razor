@@ -21,13 +21,16 @@
 }
 else
 {
-    <FreeTextTemplate ViewModel="ViewModel" OnItemEdited="HandleItemEdited" />
+    <FreeTextTemplate TemplateViewModel="ViewModel" OnItemEdited="HandleItemEdited" />
 }
 
 
 @code {
-    [Parameter]
-    public FreeTextViewModel ViewModel { get; set; } = null!;
+    public new FreeTextViewModel ViewModel
+    {
+        get => (FreeTextViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
 
     [Parameter]
     public bool IsItemEditable { get; set; }

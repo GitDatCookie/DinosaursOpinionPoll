@@ -6,76 +6,112 @@
 
 @if (!IsEditable)
 {
-    <MudPaper Class="d-flex flex-column pa-4">
-        <!-- Display the question title -->
-        <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+    @if (ViewModel.TitleFieldType != ETitleFieldType.RichTextTitleField && ViewModel.TitleFieldType != ETitleFieldType.LabelAsTitleField)
+    {
+        <MudText Typo="Typo.h6" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+    }
+    @if (ViewModel.TitleFieldType == ETitleFieldType.RichTextTitleField)
+    {
+        <MudHtmlViewer Html="@ViewModel.Title" />
+    }
 
-        <!-- Display the star rating control with hoverable label text -->
-        <div class="d-flex flex-column align-center">
-            <MudRating @bind-SelectedValue="RatingValue"
-                       HoveredValueChanged="HandleHoveredValueChanged"
-                       MaxValue="@ViewModel.Answers.Count"
-                       RatingItemsStyle=@($"color:{ViewModel.ComponentColour}") />
-            <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">
-                @LabelText
-            </MudText>
-        </div>
+    <MudItem Class="d-flex flex-column align-center">
+        <MudRating @bind-SelectedValue="RatingValue"
+                   HoveredValueChanged="HandleHoveredValueChanged"
+                   MaxValue="@ViewModel.Answers.Count"
+                   RatingItemsStyle=@($"color:{ViewModel.ComponentStyle.ComponentColour}") />
+        <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">
+            @LabelText
+        </MudText>
+    </MudItem>
 
-        @if (IsItemEditable)
-        {
-            <MudGrid Class="d-flex pl-5 mt-6">
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => DeleteQuestionAsync())">
-                    Delete Question
-                </MudButton>
-                <MudSpacer />
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => IsEditable = true)" Class="ml-5">
-                    Edit Question
-                </MudButton>
-            </MudGrid>
-        }
-    </MudPaper>
+    @if (IsItemEditable)
+    {
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => DeleteQuestionAsync())">
+                Delete Question
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => IsEditable = true)" Class="ml-5">
+                Edit Question
+            </MudButton>
+        </MudGrid>
+    }
 }
 else
 {
-    <!-- When editable, use your star rating edit template -->
-    <StarRatingsTemplate ViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
+    <StarRatingsTemplate TemplateViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
 }
 
 @code {
-    [Parameter]
-    public QuestionViewModel ViewModel { get; set; } = null!;
-
+    public new QuestionViewModel ViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
     [Parameter]
     public bool IsItemEditable { get; set; }
 
-    // Internally, we store the selected star as a zero-based index.
     private int selectedVal = 0;
 
-    // Expose a 1-based property for binding with MudRating.
+    private AnswerViewModel _selectedAnswer;
+    public AnswerViewModel SelectedAnswer
+    {
+        get => _selectedAnswer;
+        set
+        {
+            if (_selectedAnswer != value)
+            {
+                _selectedAnswer = value;
+                // Use your centralized base method for single selection.
+                UpdateUserSelectionSingle(_selectedAnswer, true);
+                // Optionally force UI refresh.
+                StateHasChanged();
+            }
+        }
+    }
+
     private int RatingValue
     {
         get => selectedVal + 1;
-        set => selectedVal = value - 1;
+        set
+        {
+            if (value - 1 != selectedVal)
+            {
+                selectedVal = value - 1;
+                // Call the mapping method.
+                UpdateSelectedAnswer();
+            }
+        }
     }
 
-    // Holds the currently hovered star value (converted to a zero-based index).
     private int? activeVal;
     private void HandleHoveredValueChanged(int? val)
     {
         activeVal = val.HasValue ? val.Value - 1 : null;
     }
 
-    // Computes the label to display under the star rating.
-    // It uses the hovered star if available; otherwise the selected star.
     private string LabelText =>
          (activeVal ?? selectedVal) is int idx && idx >= 0 && idx < ViewModel.Answers.Count
-            ? ViewModel.Answers[idx]
+            ? ViewModel.Answers[idx].AnswerText
             : "Rate our product!";
 
-    // Called when the edit template finishes editing.
     private void HandleQuestionEdited(bool edit)
     {
         IsEditable = edit;
+    }
+
+    private void UpdateSelectedAnswer()
+    {
+        if (ViewModel.Answers != null && ViewModel.Answers.Count > selectedVal)
+        {
+            SelectedAnswer = ViewModel.Answers[selectedVal];
+        }
+        else
+        {
+            // Clear selection or provide a fallback if needed.
+            SelectedAnswer = null;
+        }
     }
 
     private async Task DeleteQuestionAsync()
