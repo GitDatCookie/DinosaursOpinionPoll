@@ -9,8 +9,8 @@ namespace AI_Project.Services.Interfaces
         public void CreateQuestionairePage(Guid questionaireId, QuestionairePageViewModel pageViewModel);
         public void DeleteQuestionaire(Guid questionaireId);
         public void DeleteQuestionairePage(Guid questionairePageId);
-        public void EditQuestionaire(QuestionaireModel questionaire);
-        public void EditQuestionairePage(QuestionairePageModel questionairePage);
+        Task UpdateQuestionaireAsync(Guid questionaireId, QuestionaireViewModel updatedModel);
+        public void UpdateQuestionairePage(QuestionairePageModel questionairePage);
 
         public QuestionaireModel GetQuestionaireById(Guid questionaireId);
 

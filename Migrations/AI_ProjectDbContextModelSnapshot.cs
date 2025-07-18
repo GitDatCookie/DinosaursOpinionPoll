@@ -22,67 +22,14 @@ namespace AI_Project.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AI_Project.Models.ComponentStyleModel", b =>
+            modelBuilder.Entity("AI_Project.Models.EmailModel", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ComponentColour")
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("Email");
 
-                    b.Property<string>("HelperText")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsLabelColourised")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Label")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("NumberFieldStyleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Placeholder")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("QuestionAnswerFieldType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TextVariant")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NumberFieldStyleId");
-
-                    b.ToTable("ComponentStyleModel");
-                });
-
-            modelBuilder.Entity("AI_Project.Models.NumberFieldStyleModel", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<float?>("MaxNumberFloat")
-                        .HasColumnType("real");
-
-                    b.Property<int?>("MaxNumberInteger")
-                        .HasColumnType("int");
-
-                    b.Property<float?>("MinNumberFloat")
-                        .HasColumnType("real");
-
-                    b.Property<int?>("MinNumberInteger")
-                        .HasColumnType("int");
-
-                    b.Property<int>("NumberType")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("NumberFieldStyleModel");
+                    b.ToTable("Emails");
                 });
 
             modelBuilder.Entity("AI_Project.Models.OrderModels.RandomGroupModel", b =>
@@ -144,6 +91,69 @@ namespace AI_Project.Migrations
                     b.HasDiscriminator().HasValue("QuestionaireComponentModelBase");
 
                     b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("AI_Project.Models.QuestionaireComponentModels.StyleComponents.ComponentStyleModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ComponentColour")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HelperText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsLabelColourised")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Label")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("NumberFieldStyleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Placeholder")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuestionAnswerFieldType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TextVariant")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NumberFieldStyleId");
+
+                    b.ToTable("StyleModels");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.QuestionaireComponentModels.StyleComponents.NumberFieldStyleModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<float?>("MaxNumberFloat")
+                        .HasColumnType("real");
+
+                    b.Property<int?>("MaxNumberInteger")
+                        .HasColumnType("int");
+
+                    b.Property<float?>("MinNumberFloat")
+                        .HasColumnType("real");
+
+                    b.Property<int?>("MinNumberInteger")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NumberType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NumberStyleModels");
                 });
 
             modelBuilder.Entity("AI_Project.Models.UserModels.AdminUserComponentModels.QuestionaireModel", b =>
@@ -230,6 +240,48 @@ namespace AI_Project.Migrations
                     b.ToTable("SubjectUsers");
                 });
 
+            modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.AIConversationModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Conversations");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.AIMessageModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MessageType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TimeStamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.ToTable("Messages");
+                });
+
             modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.AnswerModel", b =>
                 {
                     b.Property<Guid>("AnswerID")
@@ -248,16 +300,6 @@ namespace AI_Project.Migrations
                     b.HasIndex("QuestionId");
 
                     b.ToTable("Answers");
-                });
-
-            modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.EmailModel", b =>
-                {
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Email");
-
-                    b.ToTable("Emails");
                 });
 
             modelBuilder.Entity("AnswerModelSubjectUserModel", b =>
@@ -290,7 +332,7 @@ namespace AI_Project.Migrations
                 {
                     b.HasBaseType("AI_Project.Models.QuestionaireComponentModels.QuestionaireComponentModelBase");
 
-                    b.Property<string>("Data")
+                    b.Property<string>("Url")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -321,20 +363,17 @@ namespace AI_Project.Migrations
                 {
                     b.HasBaseType("AI_Project.Models.QuestionaireComponentModels.QuestionaireComponentModelBase");
 
-                    b.Property<string>("Path")
+                    b.Property<string>("Url")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.ToTable("QuestionaireComponentModelBase", t =>
+                        {
+                            t.Property("Url")
+                                .HasColumnName("VideoModel_Url");
+                        });
+
                     b.HasDiscriminator().HasValue("VideoModel");
-                });
-
-            modelBuilder.Entity("AI_Project.Models.ComponentStyleModel", b =>
-                {
-                    b.HasOne("AI_Project.Models.NumberFieldStyleModel", "NumberFieldStyle")
-                        .WithMany()
-                        .HasForeignKey("NumberFieldStyleId");
-
-                    b.Navigation("NumberFieldStyle");
                 });
 
             modelBuilder.Entity("AI_Project.Models.QuestionaireComponentModels.QuestionaireComponentModelBase", b =>
@@ -348,6 +387,15 @@ namespace AI_Project.Migrations
                         .HasForeignKey("RandomGroupId");
 
                     b.Navigation("RandomGroup");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.QuestionaireComponentModels.StyleComponents.ComponentStyleModel", b =>
+                {
+                    b.HasOne("AI_Project.Models.QuestionaireComponentModels.StyleComponents.NumberFieldStyleModel", "NumberFieldStyle")
+                        .WithMany()
+                        .HasForeignKey("NumberFieldStyleId");
+
+                    b.Navigation("NumberFieldStyle");
                 });
 
             modelBuilder.Entity("AI_Project.Models.UserModels.AdminUserComponentModels.QuestionaireModel", b =>
@@ -368,6 +416,28 @@ namespace AI_Project.Migrations
                         .HasForeignKey("RandomGroupId");
 
                     b.Navigation("RandomGroup");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.AIConversationModel", b =>
+                {
+                    b.HasOne("AI_Project.Models.UserModels.SubjectUserModel", "User")
+                        .WithMany("Conversations")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.AIMessageModel", b =>
+                {
+                    b.HasOne("AI_Project.Models.UserModels.SubjectUserModelComponents.AIConversationModel", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.AnswerModel", b =>
@@ -402,7 +472,7 @@ namespace AI_Project.Migrations
                         .WithMany("Questions")
                         .HasForeignKey("AdminUserModelLoginId");
 
-                    b.HasOne("AI_Project.Models.ComponentStyleModel", "ComponentStyle")
+                    b.HasOne("AI_Project.Models.QuestionaireComponentModels.StyleComponents.ComponentStyleModel", "ComponentStyle")
                         .WithMany()
                         .HasForeignKey("ComponentStyleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -433,6 +503,16 @@ namespace AI_Project.Migrations
                     b.Navigation("Questionaires");
 
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModel", b =>
+                {
+                    b.Navigation("Conversations");
+                });
+
+            modelBuilder.Entity("AI_Project.Models.UserModels.SubjectUserModelComponents.AIConversationModel", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("AI_Project.Models.QuestionaireComponentModels.QuestionModel", b =>

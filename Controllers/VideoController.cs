@@ -8,24 +8,31 @@ namespace AI_Project.Controllers
     [Route("api/[controller]")]
     public class VideoController : ControllerBase
     {
-        private readonly IVideoService _videoService;
+        private readonly string uploadFolder;
 
-        public VideoController(IVideoService videoService)
+        public VideoController()
         {
-            _videoService = videoService;
+            uploadFolder = Environment.GetEnvironmentVariable("VIDEO_UPLOAD_PATH")
+                           ?? throw new InvalidOperationException("VIDEO_UPLOAD_PATH not set");
         }
 
-        [HttpPost("Upload")]
-        public async Task<IActionResult> Upload(IFormFile file)
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload([FromForm] IFormFile videoFile)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("Invalid file.");
+            if (videoFile == null || videoFile.Length == 0)
+                return BadRequest("No file provided.");
 
-            // Delegate the file saving and database interaction to the service
-            var videoPath = await _videoService.UploadVideoAsync(file);
+            Directory.CreateDirectory(uploadFolder);
 
-            return Ok(videoPath); // Return the relative path to the client
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(videoFile.FileName)}";
+            var filePath = Path.Combine(uploadFolder, fileName);
+
+            await using var stream = System.IO.File.Create(filePath);
+            await videoFile.CopyToAsync(stream);
+
+            var url = $"/uploads/videos/{fileName}";
+            return Ok(new { FileName = fileName, Url = url });
         }
+
     }
-
 }

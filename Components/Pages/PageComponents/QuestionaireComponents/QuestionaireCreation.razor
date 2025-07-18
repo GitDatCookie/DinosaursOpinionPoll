@@ -1,0 +1,96 @@
+﻿@page "/questionaire-creation"
+@using AI_Project.Models.OrderModels
+@using MudBlazor
+@inject IComponentFactory ComponentFactory
+@inject IQuestionaireService QuestionaireService
+@inject NavigationManager NavigationManager
+
+
+<MudDropContainer T="(QuestionaireComponentViewModelBase ViewModel, EComponentType ComponentType, EQuestionComponentType QuestionComponentType)"
+@bind-Items="currentPageItems"
+ItemsSelector="@( (item, zone) => item.ViewModel.Order?.DropZoneIdentifier == zone )"
+ItemDropped="PageItemDropped"
+Class="d-flex flex-grow-1"
+@ref="MudDropContainerRef">
+    <ChildContent>
+        <MudContainer Class="pa-4" Style="flex: 1;">
+            <MudForm @ref="mudForm">
+                <MudTextField @bind-Value="Questionaire.QuestionaireTitle" Placeholder="Name of the Questionaire ..." Required
+                RequiredError="Question is Required" />
+            </MudForm>
+
+            <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                <MudPagination Color="Color.Primary"
+                Count="@(Questionaire.PageList.Count)"
+                @bind-Selected="SelectedPage" />
+                <MudText Typo="Typo.subtitle1">Selected page: @selectedPage</MudText>
+                <MudStack Spacing="2">
+                    <MudButton Variant="Variant.Outlined"
+                    Color="Color.Primary"
+                    OnClick="@AddPage">
+                        Add Page
+                    </MudButton>
+                    @if (Questionaire.PageList.Count > 1)
+                    {
+                        <MudButton Variant="Variant.Outlined"
+                        Color="Color.Error"
+                        OnClick="@DeleteCurrentPage">
+                            Delete Page
+                        </MudButton>
+                    }
+                </MudStack>
+            </MudStack>
+
+            <MudPaper Class="ma-4 flex-grow-1">
+                <MudList T="string" Class="d-flex flex-column mud-height-full">
+                    <MudListSubheader>@($"Page {selectedPage}")</MudListSubheader>
+                    <MudDropZone T="(QuestionaireComponentViewModelBase ViewModel, EComponentType ComponentType, EQuestionComponentType QuestionComponentType)"
+                    Identifier="@($"DestinationZone_{selectedPage}")"
+                    AllowReorder="true"
+                    Class="flex-grow-1"
+                    Style="min-height:50px">
+                    </MudDropZone>
+                </MudList>
+            </MudPaper>
+
+        </MudContainer>
+
+        <MudDrawer Elevation="2"
+        Open="true"
+        Anchor="Anchor.Right"
+        ClipMode="DrawerClipMode.Always"
+        Width="300px"
+        Style="flex-shrink: 0;">
+            <MudList T="string">
+                <DrawerBaseComponent OnItemSelected="OnItemHandled" />
+            </MudList>
+        </MudDrawer>
+    </ChildContent>
+
+    <ItemRenderer>
+        <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="@(() => DeletePageItem(context.ViewModel.Id))">
+            Delete
+        </MudButton>
+        <RandomGroupTemplate Questionaire="Questionaire"
+        RandomGroupType="ERandomGroupType.RandomQuestionairePageComponentGroup"
+        RandomGroupsChanged="HandleRandomGroupsChanged"
+        ViewModel="@context.ViewModel" />
+        <DynamicComponentComponent ComponentType="@context.ComponentType"
+        QuestionComponentType="@context.QuestionComponentType"
+        ViewModel="@context.ViewModel"
+        IsItemEditable="false" />
+    </ItemRenderer>
+</MudDropContainer>
+
+<MudGrid Class="justify-content-center">
+    <MudSpacer/>
+    <MudButton FullWidth="false" Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveQuestionaire">
+        Save Questionaire
+    </MudButton>
+    <MudSpacer/>
+</MudGrid>
+
+
+
+
+

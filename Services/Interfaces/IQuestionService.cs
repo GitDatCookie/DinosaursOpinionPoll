@@ -13,6 +13,6 @@ namespace AI_Project.Services.Interfaces
         Task<QuestionModel> GetQuestionAsync(Guid questionId);
         Task<QuestionViewModel> GetQuestionViewModelAsync(Guid questionId);
         Task<List<QuestionViewModel>> GetQuestionViewModelsAsync();
-        Task<List<QuestionViewModel>> GetQuestionsByTypeAsync(EQuestionType eQuestionType);
+        Task<List<QuestionViewModel>> GetQuestionsByTypeAsync(EQuestionComponentType componentType);
     }
 }

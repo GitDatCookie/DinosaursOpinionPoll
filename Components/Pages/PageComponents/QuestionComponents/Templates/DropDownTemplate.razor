@@ -1,0 +1,112 @@
+﻿@inject IQuestionService questionService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="pa-4">
+    <MudForm @ref=mudForm>
+        <MudStack Row>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+        </MudStack>
+
+        <MudStack Row>
+            @if (!IsRichText && !IsLabel)
+            {
+                <MudTextField @bind-Value="Title"
+                Placeholder="Type in your Question..."
+                Required
+                RequiredError="Question is Required"
+                Immediate />
+            }
+            @if (IsRichText)
+            {
+                <MudHtmlEditor @bind-Html=@Title style="width:100%">
+                    <MudHtmlToolbarOptions InsertImage="false" />
+                </MudHtmlEditor>
+                @if (isSubmitted && string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        Question is Required
+                    </MudText>
+                }
+            }
+
+            <MudIconButton Class="float-end"
+            Icon="@Icons.Material.Filled.Settings"
+            Color="Color.Primary"
+            OnClick="@(()=>SetQuestionOptionsAsync(EQuestionAnswerFieldType.AnswerField, TemplateViewModel))" />
+        </MudStack>
+
+
+        <MudSelect 
+        Class="@(TemplateViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"  
+        T="AnswerViewModel"
+        Label="@TemplateViewModel.ComponentStyle.Label"
+        Variant="@TemplateViewModel.ComponentStyle.TextVariant"
+        Placeholder="@TemplateViewModel.ComponentStyle.Placeholder"
+        HelperText="@TemplateViewModel.ComponentStyle.HelperText"
+        Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")>
+            @foreach(var option in EditableOptions)
+            {
+                <MudSelectItem Value="option">@option.AnswerText</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudDivider Class="my-4" />
+
+        @foreach (var option in EditableOptions.Select((name, index) => new { Name = name.AnswerText, Index = index }))
+        {
+            <MudItem Class="d-flex align-items-center mb-8">
+                <MudStack Row=true Class="ml-4 me-2">
+                    @if (EditIndex == option.Index)
+                    {
+                        <!-- Editable text field for the label -->
+                        <MudTextField @bind-Value="EditableOptions[option.Index].AnswerText" Immediate="true" OnBlur="@(() => FinishEditing())" />
+                    }
+                    else
+                    {
+                        <MudText>
+                            @option.Name
+                        </MudText>
+                    }
+                </MudStack>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.Index)" Class="ms-2" />
+                @if (EditableOptions.Count > DropdownMin)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveOption(option.Index))" />
+                }
+            </MudItem>
+
+        }
+
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (EditableOptions.Count < DropdownMax)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=> AddOption("DropdownItem"))">
+                    Add Label
+                </MudButton>
+            }
+            <MudSpacer />
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                    Save Question
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                    Edit Question
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+
+
+
+<style>
+    .label-custom-color .mud-input-label {
+        color: @ComponentColour !important;
+    }
+</style>

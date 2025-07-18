@@ -1,0 +1,31 @@
+﻿@using Ganss.Xss
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="d-flex flex-column pa-4">
+    <MudTextField @bind-Value="Title" Placeholder="Give your text a Title..." />
+    ﻿<MudStack Justify="Justify.FlexEnd" Row="true">
+        <MudButton OnClick="ResetEditorAsync" Size="Size.Small">Reset</MudButton>
+
+    </MudStack>
+
+    <MudHtmlEditor @ref=editor @bind-Html=@FreeText>
+        <MudHtmlToolbarOptions InsertImage="false" />
+    </MudHtmlEditor>
+
+    <MudGrid Class="d-flex pl-5 mt-6">
+        <MudSpacer />
+        @if (!IsEditable)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveTextAsync">
+                Save Text
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditTextAsync">
+                Edit Question
+            </MudButton>
+        }
+    </MudGrid>
+</MudPaper>
+

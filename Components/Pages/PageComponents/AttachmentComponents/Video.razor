@@ -1,0 +1,50 @@
+﻿@inherits QuestionaireComponentBase
+
+@if (!IsEditable)
+{
+    <MudGrid Class="d-flex justify-center align-center mt-4" Style="width: 100%; overflow: auto;">
+        <video controls
+               src="@ViewModel.Url"
+               style="max-width: 100%; height: auto;">
+            Your browser does not support the video tag.
+        </video>
+    </MudGrid>
+
+    @if (IsItemEditable)
+    {
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteVideoAsync())">
+                Delete Video
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
+                Edit Video
+            </MudButton>
+        </MudGrid>
+    }
+}
+else
+{
+    <VideoTemplate TemplateViewModel="ViewModel" OnItemEdited="HandleItemEdited" />
+}
+
+
+@code {
+    public new VideoViewModel ViewModel
+    {
+        get => (VideoViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
+
+    [Parameter] public bool IsItemEditable { get; set; }
+
+    private void HandleItemEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private async Task DeleteVideoAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EComponentType.Image, EQuestionComponentType.None);
+    }
+}

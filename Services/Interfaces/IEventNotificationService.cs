@@ -5,13 +5,13 @@ namespace AI_Project.Services.Interfaces
 {
     public interface IEventNotificationService
     {
-        public event Action<EQuestionType>? QuestionChanged;
-        public event Action<EItemType>? ItemChanged;
+        public event Func<EQuestionComponentType, Task>? QuestionChanged;
+        public event Func<EComponentType, Task>? ItemChanged;
         public event Action? ContainerReset;
 
         public void NotifyContainerReset();
-        public void NotifyQuestionChanged(EQuestionType questionType);
-        public void NotifyItemChanged(EItemType itemType);
+        public void NotifyQuestionChanged(EQuestionComponentType questionType);
+        public void NotifyItemChanged(EComponentType itemType);
 
     }
 }

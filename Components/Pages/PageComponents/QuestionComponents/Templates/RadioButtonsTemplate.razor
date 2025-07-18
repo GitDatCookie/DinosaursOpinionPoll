@@ -1,0 +1,84 @@
+﻿@using AI_Project.Models
+@inject IQuestionService questionService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="pa-4">
+    <MudForm @ref=mudForm>
+        <MudStack Row>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+        </MudStack>
+
+        <MudStack Row>
+            @if (!IsRichText && !IsLabel)
+            {
+                <MudTextField @bind-Value="Title"
+                Placeholder="Type in your Question..."
+                Required
+                RequiredError="Question is Required"
+                Immediate />
+            }
+            @if (IsRichText)
+            {
+                <MudHtmlEditor @bind-Html=@Title style="width:100%">
+                    <MudHtmlToolbarOptions InsertImage="false" />
+                </MudHtmlEditor>
+                @if (isSubmitted && string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        Question is Required
+                    </MudText>
+                }
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" OnClick="@(()=>SetQuestionOptionsAsync(EQuestionAnswerFieldType.NoAnswerField, TemplateViewModel))" Class="float-end" />
+        </MudStack>
+
+        <MudRadioGroup T="int" @bind-Value="SelectedOption">
+            @foreach (var option in EditableOptions.Select((name, index) => new { name.AnswerText, index }))
+            {
+                <MudRadio T="int" Value="@option.index" Style=@($"--mud-palette-action-default: {ComponentColour};") Class="me-2">
+                    @* If the current button is being edited, show a TextField; otherwise, show the text *@
+                    @if (EditIndex == option.index)
+                    {
+                        <MudTextField @bind-Value="EditableOptions[option.index].AnswerText" Immediate="true" Placeholder="Type in your Button Value ..." OnBlur="@(()=>FinishEditing())" />
+                    }
+                    else
+                    {
+                        <MudText>
+                            @option.AnswerText
+                        </MudText>
+                    }
+                </MudRadio>
+
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditIndex = option.index)" />
+                @if(EditableOptions.Count > RadioButtonMin)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(()=>RemoveOption(option.index))" />
+                }
+
+            }
+        </MudRadioGroup>
+
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => AddOption("Radio"))">
+                Add Button
+            </MudButton>
+            <MudSpacer />
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                    Save Question
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                    Edit Question
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+
+

@@ -2,8 +2,6 @@
 @using AI_Project.Services
 @inject IEventNotificationService NotificationService
 
-@implements IDisposable
-
 <MudDrawer ClipMode="DrawerClipMode.Always" Elevation="2" Open="true">
     <MudList T="string">
         <DrawerBaseComponent IsTemplate="true" OnTemplateSelected="OnTemplateSelected"/>
@@ -29,8 +27,8 @@
     private bool renderItem = false;
     private bool renderTemplate = false;
 
-    private (QuestionaireComponentViewModelBase ViewModel, EItemType ItemType, EQuestionType QuestionType) returnItem;
-    private (EItemType ItemType, EQuestionType QuestionType) returnTemplate;
+    private (QuestionaireComponentViewModelBase ViewModel, EComponentType ItemType, EQuestionComponentType QuestionType) returnItem;
+    private (EComponentType ItemType, EQuestionComponentType QuestionType) returnTemplate;
 
     protected override void OnInitialized()
     {
@@ -45,7 +43,7 @@
         StateHasChanged();
     }
 
-    private void OnItemHandled((QuestionaireComponentViewModelBase, EItemType, EQuestionType)selectedItem)
+    private void OnItemHandled((QuestionaireComponentViewModelBase, EComponentType, EQuestionComponentType)selectedItem)
     {
         returnItem = selectedItem;
         renderTemplate = false;
@@ -53,16 +51,11 @@
         StateHasChanged();
     }
 
-    private void OnTemplateSelected((EItemType, EQuestionType) selectedTemplate)
+    private void OnTemplateSelected((EComponentType, EQuestionComponentType) selectedTemplate)
     {
         returnTemplate = selectedTemplate;
         renderItem = false;
         renderTemplate = true;
         StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NotificationService.ContainerReset -= ResetContainer;
     }
 }

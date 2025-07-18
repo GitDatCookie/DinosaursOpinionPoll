@@ -1,0 +1,68 @@
+﻿@using AI_Project.ViewModels
+@inject IQuestionService questionService
+@inject IDialogService dialogService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+@if (!IsEditable)
+{
+
+    @if (ViewModel.TitleFieldType != EComponentTitleFieldType.RichTextTitleField && ViewModel.TitleFieldType != EComponentTitleFieldType.LabelAsTitleField)
+    {
+        <MudText Typo="Typo.h6" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+    }
+    @if (ViewModel.TitleFieldType == EComponentTitleFieldType.RichTextTitleField)
+    {
+        <MudHtmlViewer Html="@ViewModel.Title" />
+    }
+
+    <MudTextField Class="@(ViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
+                  T="string"
+                  Label="@ViewModel.ComponentStyle.Label"
+                  Variant="@ViewModel.ComponentStyle.TextVariant"
+                  Placeholder="@ViewModel.ComponentStyle.Placeholder"
+                  HelperText="@ViewModel.ComponentStyle.HelperText"
+                  Style=@($"--mud-palette-action-default: {ViewModel.ComponentStyle.ComponentColour}; --mud-palette-primary: {ViewModel.ComponentStyle.ComponentColour}; .label-custom-color .mud-input-label {{ color: {ComponentColour}; }}")>
+    </MudTextField>
+
+    @if (IsItemEditable)
+    {
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteQuestionAsync())">
+                Delete Question
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
+                Edit Question
+            </MudButton>
+        </MudGrid>
+    }
+
+
+}
+else
+{
+    <SingleLineInputTemplate TemplateViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
+}
+
+
+@code {
+    public new QuestionViewModel ViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
+
+    [Parameter]
+    public bool IsItemEditable { get; set; }
+
+    private void HandleQuestionEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private async Task DeleteQuestionAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EComponentType.Question, EQuestionComponentType.SingleLine);
+    }
+}

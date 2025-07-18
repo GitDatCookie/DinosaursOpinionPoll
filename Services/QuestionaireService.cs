@@ -8,6 +8,7 @@ using AI_Project.Services.Interfaces;
 using AI_Project.ViewModels;
 using AI_Project.ViewModels.QuestionaireComponentViewModels;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
 namespace AI_Project.Services
@@ -57,12 +58,12 @@ namespace AI_Project.Services
             throw new NotImplementedException();
         }
 
-        public void EditQuestionaire(QuestionaireModel questionaire)
+        public async Task UpdateQuestionaireAsync(Guid questionaireId, QuestionaireViewModel updatedModel)
         {
             throw new NotImplementedException();
         }
 
-        public void EditQuestionairePage(QuestionairePageModel questionairePage)
+        public void UpdateQuestionairePage(QuestionairePageModel questionairePage)
         {
             throw new NotImplementedException();
         }
@@ -88,8 +89,8 @@ namespace AI_Project.Services
 
         public async Task<List<QuestionaireViewModel>> GetQuestionairesAsync()
         {
-            List<QuestionaireModel> questionaireModels = _dbContext.QuestionaireModels.ToList();
-            List<QuestionaireViewModel> viewModels = new();
+            List<QuestionaireModel> questionaireModels = [.. _dbContext.QuestionaireModels];
+            List<QuestionaireViewModel> viewModels = [];
 
             foreach(var questionaire in questionaireModels)
             {
@@ -151,52 +152,50 @@ namespace AI_Project.Services
 
         private string CreatePublikToken()
         {
-            using (var rng = RandomNumberGenerator.Create())
+            using var rng = RandomNumberGenerator.Create();
+            var bytes = new byte[16];
+            rng.GetBytes(bytes);
+
+            string token = Convert.ToBase64String(bytes)
+                .Replace("/", "_")
+                .Replace("+", "-")
+                .Replace("=", "");
+
+            if (_dbContext.QuestionaireModels.Where(x => x.PublicToken == token).Any())
             {
-                var bytes = new byte[16];
-                rng.GetBytes(bytes);
-                
-                string token =  Convert.ToBase64String(bytes)
-                    .Replace("/", "_")
-                    .Replace("+", "-")
-                    .Replace("=", "");
-
-                if(_dbContext.QuestionaireModels.Where(x => x.PublicToken == token).Any())
-                {
-                    return CreatePublikToken();
-                }
-
-                return token;
+                return CreatePublikToken();
             }
+
+            return token;
         }
 
         private async Task <QuestionaireViewModel> CreateViewModelAsync(QuestionaireModel questionaireModel)
         {
-            List<QuestionairePageViewModel> pageViewModels = new List<QuestionairePageViewModel>();
+            List<QuestionairePageViewModel> pageViewModels = [];
 
             foreach (var pageModel in questionaireModel.PageList)
             {
-                List<(QuestionaireComponentViewModelBase viewModelBase, EItemType ItemType, EQuestionType QuestionType)> componentViewModels
-                    = new List<(QuestionaireComponentViewModelBase, EItemType, EQuestionType)>();
+                List<(QuestionaireComponentViewModelBase viewModelBase, EComponentType ItemType, EQuestionComponentType QuestionType)> componentViewModels
+                    = [];
 
                 foreach (var componentModel in pageModel.Items)
                 {
                     var viewModelBase = await _questionaireComponentService
                         .GetQuestionaireComponentViewModelAsync(componentModel);
 
-                    (EItemType itemType, EQuestionType questionType) = viewModelBase switch
+                    (EComponentType itemType, EQuestionComponentType questionType) = viewModelBase switch
                     {
-                        QuestionViewModel question => (EItemType.Question, question.QuestionType),
-                        VideoViewModel _ => (EItemType.Video, EQuestionType.None),
-                        ImageViewModel _ => (EItemType.Image, EQuestionType.None),
-                        FreeTextViewModel _ => (EItemType.FreeText, EQuestionType.None),
+                        QuestionViewModel question => (EComponentType.Question, question.QuestionType),
+                        VideoViewModel _ => (EComponentType.Video, EQuestionComponentType.None),
+                        ImageViewModel _ => (EComponentType.Image, EQuestionComponentType.None),
+                        FreeTextViewModel _ => (EComponentType.FreeText, EQuestionComponentType.None),
                         _ => throw new NotSupportedException($"ViewModel type {viewModelBase.GetType().Name} is not supported.")
                     };
 
                     componentViewModels.Add((viewModelBase, itemType, questionType));
                 }
 
-                QuestionairePageViewModel pageViewModel = new QuestionairePageViewModel()
+                QuestionairePageViewModel pageViewModel = new()
                 {
                     OrderID = pageModel.OrderID,
                     IsRandomised = pageModel.IsRandomised,
@@ -206,7 +205,7 @@ namespace AI_Project.Services
                 pageViewModels.Add(pageViewModel);
             }
 
-            QuestionaireViewModel viewModel = new QuestionaireViewModel()
+            QuestionaireViewModel viewModel = new()
             {
                 QuestionaireTitle = questionaireModel.QuestionaireTitle,
                 PublicToken = questionaireModel.PublicToken,
@@ -218,17 +217,17 @@ namespace AI_Project.Services
 
         private async Task<QuestionaireModel> CreateModelAsync(QuestionaireViewModel questionaireViewModel)
         {
-            List<QuestionairePageModel> pageModels = new List<QuestionairePageModel>();
+            List<QuestionairePageModel> pageModels = [];
             foreach(var page in questionaireViewModel.PageList)
             {
-                List<QuestionaireComponentModelBase> questionaireComponents = new List<QuestionaireComponentModelBase>();
-                foreach(var item in page.Items)
+                List<QuestionaireComponentModelBase> questionaireComponents = [];
+                foreach((QuestionaireComponentViewModelBase viewModelBase, EComponentType itemType, EQuestionComponentType questionType) in page.Items)
                 {
-                    await _questionaireComponentService.UpdateQuestionaireComponentAsync((item.viewModelBase.Id, item.viewModelBase, item.itemType));
-                    questionaireComponents.Add(await _questionaireComponentService.GetQuestionaireComponentModelAsync((item.viewModelBase.Id, item.itemType)));
+                    await _questionaireComponentService.UpdateQuestionaireComponentAsync((viewModelBase.Id, viewModelBase, itemType));
+                    questionaireComponents.Add(await _questionaireComponentService.GetQuestionaireComponentModelAsync((viewModelBase.Id, itemType)));
                 }
 
-                QuestionairePageModel pageModel = new QuestionairePageModel()
+                QuestionairePageModel pageModel = new()
                 {
                     IsRandomised = true,
                     OrderID = page.OrderID,

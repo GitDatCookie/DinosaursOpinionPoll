@@ -1,0 +1,73 @@
+﻿@using AI_Project.ViewModels
+@inherits QuestionaireComponentBase
+
+@if (editable)
+{
+    <MudCard Class="ma-2" Outlined>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowLeft"
+                    Disabled="@(PageViewModel.OrderID == 1)"
+                    OnClick="DecreaseOrder" />
+                    <MudText>@PageViewModel.OrderID</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowRight"
+                    Disabled="@(PageViewModel.OrderID == MaxOrder)"
+                    OnClick="IncreaseOrder" />
+                </MudStack>
+
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <RandomGroupTemplate Questionaire="Questionaire"
+                PageViewModel="PageViewModel"
+                RandomGroupType="ERandomGroupType.RandomPageGroup" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            @foreach (var item in PageViewModel.Items)
+            {
+                <DynamicComponentComponent ItemType="@item.componentType"
+                QuestionType="@item.questionComponentType"
+                ViewModel="@item.viewModelBase"
+                IsItemEditable="false" />
+            }
+        </MudCardContent>
+        <MudCardActions>
+            <!-- Additional actions, if needed -->
+        </MudCardActions>
+    </MudCard>
+}
+else
+{
+
+}
+
+@code {
+    [Parameter] public QuestionaireViewModel Questionaire { get; set; } = new();
+
+    [Parameter] public QuestionairePageViewModel PageViewModel { get; set; } = new();
+
+    [Parameter] public EventCallback<int> OrderChanged { get; set; }
+
+    // Maximum allowed order, passed from the parent (equal to the total count)
+    [Parameter] public int MaxOrder { get; set; }
+
+
+    bool editable = true;
+
+    private async Task DecreaseOrder()
+    {
+        if (PageViewModel.OrderID > 1)
+        {
+            await OrderChanged.InvokeAsync(PageViewModel.OrderID - 1);
+        }
+    }
+
+    private async Task IncreaseOrder()
+    {
+        if (PageViewModel.OrderID < MaxOrder)
+        {
+            await OrderChanged.InvokeAsync(PageViewModel.OrderID + 1);
+        }
+    }
+}

@@ -7,6 +7,6 @@ namespace AI_Project.Services.Interfaces
 {
     public interface IAIService
     {
-        public Task<string> GetAnswerAsync(string question);
+        public Task<(string, string?)> GetAnswerAsync(AIMessageViewModel userMessage);
     }
 }

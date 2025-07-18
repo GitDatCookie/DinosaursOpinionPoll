@@ -1,0 +1,116 @@
+﻿@using AI_Project.Enums
+@using AI_Project.ViewModels
+@using System.Text.RegularExpressions
+
+@inject IQuestionService questionService
+@inject IEventNotificationService NotificationService
+
+
+<MudListItem T="string" Text="@elementText" Icon="@Icons.Material.Filled.QuestionMark">
+    <NestedList>
+        @if(!IsTemplate)
+        {
+            @foreach (var item in itemList.Where(x => x.ItemType == EComponentType.Question))
+            {
+                <MudListItem T="string" Text="@item.Title" Icon="@item.Icon" @bind-IsOpen="@isOpen">
+                    <NestedList>
+                        <ItemDrawerComponent @key="@($"{item.ItemType}_{item.QuestionType}")"
+                        ItemType="@item.ItemType" 
+                        QuestionType="@item.QuestionType" 
+                        OnItemSelected="HandleItemSelected"/>
+                    </NestedList>
+                </MudListItem>
+            }
+        }
+        else
+        {
+            @foreach (var item in itemList.Where(x => x.ItemType == EComponentType.Question))
+            {
+                <TemplateDrawerComponent ItemType="@item.ItemType"
+                QuestionType="@item.QuestionType"
+                Icon="@item.Icon"
+                Title=@($"{@item.Title} Template")
+                OnTemplateSelected="HandleTemplateSelected" />
+            }
+
+        }
+    </NestedList>
+</MudListItem>
+<MudListItem T="string" Text="@attachmentText" Icon="@Icons.Material.Filled.Attachment">
+    <NestedList>
+        @if(!IsTemplate)
+        {
+            @foreach (var item in itemList.Where(x => x.ItemType != EComponentType.Question))
+            {
+                <MudListItem T="string" Text="@item.Title" Icon="@item.Icon">
+                    <NestedList>
+                        <ItemDrawerComponent @key="@($"{item.ItemType}_{item.QuestionType}")"
+                        ItemType="@item.ItemType" 
+                        QuestionType="@item.QuestionType" 
+                        Icon="@item.Icon" 
+                        OnItemSelected="HandleItemSelected"/>
+                    </NestedList>
+                </MudListItem>
+            }
+        }
+        else
+        {
+            @foreach (var item in itemList.Where(x => x.ItemType != EComponentType.Question))
+            {
+                <TemplateDrawerComponent ItemType="@item.ItemType"
+                QuestionType="@item.QuestionType"
+                Icon="@item.Icon"
+                Title=@($"{@item.Title} Template")
+                OnTemplateSelected="HandleTemplateSelected"/>
+            }
+        }
+    </NestedList>
+</MudListItem>
+
+@code {
+    [Parameter] public EventCallback<(QuestionaireComponentViewModelBase, EComponentType, EQuestionComponentType)> OnItemSelected { get; set; }
+
+    [Parameter] public EventCallback<(EComponentType, EQuestionComponentType)> OnTemplateSelected { get; set; }
+
+    [Parameter] public bool IsTemplate { get; set; } = false;
+
+    private string elementText = "Saved Question Elements";
+    private string attachmentText = "Saved Attachments";
+    private bool isOpen;
+
+    private static List<(EComponentType ItemType, string Title, EQuestionComponentType QuestionType, string Icon)> itemList = new List<(EComponentType, string, EQuestionComponentType, string)>
+    {
+        (EComponentType.FreeText, "Text", EQuestionComponentType.None, Icons.Material.Filled.TextSnippet),
+        (EComponentType.Image, "Image", EQuestionComponentType.None, Icons.Material.Filled.Image),
+        (EComponentType.Video, "Video", EQuestionComponentType.None, Icons.Material.Filled.VideoFile),
+        (EComponentType.Question, "Checkbox", EQuestionComponentType.CheckBox, Icons.Material.Filled.CheckBox),
+        (EComponentType.Question, "RadioButton", EQuestionComponentType.RadioButton, Icons.Material.Filled.RadioButtonChecked),
+        (EComponentType.Question, "StarRate", EQuestionComponentType.StarRating, Icons.Material.Filled.StarRate),
+        (EComponentType.Question, "Sliders", EQuestionComponentType.Slider, Icons.Material.Filled.LinearScale),
+        (EComponentType.Question, "SingleLine Textfields", EQuestionComponentType.SingleLine, Icons.Material.Filled.ShortText),
+        (EComponentType.Question, "Multiline Textfields", EQuestionComponentType.MultiLine, Icons.Material.Filled.ViewHeadline),
+        (EComponentType.Question, "DropDown", EQuestionComponentType.DropDown, Icons.Material.Filled.List),
+        (EComponentType.Question, "Numbers", EQuestionComponentType.Number, Icons.Material.Filled.Numbers)
+    };
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if(IsTemplate)
+        {
+            elementText = "Question Elements";
+            attachmentText = "Attachments";
+        }
+    }
+
+    private async Task HandleItemSelected((QuestionaireComponentViewModelBase item, EComponentType itemType, EQuestionComponentType questionType) selectedItem)
+    {
+        await OnItemSelected.InvokeAsync(selectedItem);
+    }
+
+    private async Task HandleTemplateSelected((EComponentType itemType, EQuestionComponentType questionType) selectedTemplate)
+    {
+        await OnTemplateSelected.InvokeAsync(selectedTemplate);
+    }
+
+}

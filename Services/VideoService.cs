@@ -18,42 +18,43 @@ namespace AI_Project.Services
             _env = env;
         }
 
-        public void CreateVideo(VideoViewModel video)
+        public async Task CreateVideoAsync(VideoViewModel video)
         {
             _dbContext.Add(CreateVideoModel(video));
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
         }
 
-        public void ChangeVideo(Guid videoId, VideoViewModel newImageViewModel)
+        public async Task UpdateVideoAsync(Guid videoId, VideoViewModel newImageViewModel)
         {
-            VideoModel videoToBeChanged = GetVideo(videoId);
+            VideoModel videoToBeChanged = await GetVideoAsync(videoId);
             videoToBeChanged.Title = newImageViewModel.Title;
-            videoToBeChanged.Path = newImageViewModel.Path;
+            videoToBeChanged.Url = newImageViewModel.Url;
 
             _dbContext.SaveChanges();
         }
 
-        public void DeleteVideo(Guid videoId)
+        public async Task DeleteVideoAsync(Guid videoId)
         {
-            _dbContext.Videos.Remove(GetVideo(videoId));
-            _dbContext.SaveChanges();
+            _dbContext.Videos.Remove(await GetVideoAsync(videoId));
+            await _dbContext.SaveChangesAsync();
         }
 
-        public VideoModel GetVideo(Guid imageId)
+
+        public async Task<VideoModel> GetVideoAsync(Guid imageId)
         {
-            return _dbContext.Videos.FirstOrDefault(x => x.Id == imageId);
+           return await _dbContext.Videos.FirstOrDefaultAsync(x => x.Id == imageId);
         }
 
-        public VideoViewModel GetVideoViewModel(Guid videoId)
+        public async Task<VideoViewModel> GetVideoViewModelAsync(Guid videoId)
         {
-            VideoModel videoModel = _dbContext.Videos.FirstOrDefault(x => x.Id == videoId);
+            VideoModel videoModel = await _dbContext.Videos.FirstOrDefaultAsync(x => x.Id == videoId);
             return CreateViewModel(videoModel);
         }
 
-        public List<VideoViewModel> GetVideos()
+        public async Task<List<VideoViewModel>> GetVideosAsync()
         {
-            List<VideoViewModel> result = new();
-            foreach (var video in _dbContext.Videos.ToList())
+            List<VideoViewModel> result = [];
+            foreach (var video in await _dbContext.Videos.ToListAsync())
             {
                 result.Add(CreateViewModel(video));
             }
@@ -70,12 +71,12 @@ namespace AI_Project.Services
             await videoFile.CopyToAsync(stream);
 
             // Save the file path to the database
-            var video = new VideoModel { Path = $"/uploads/{videoFile.FileName}" };
+            var video = new VideoModel { Url = $"/uploads/{videoFile.FileName}" };
 
             _dbContext.Videos.Add(video);
             await _dbContext.SaveChangesAsync();
 
-            return video.Path;
+            return video.Url;
         }
 
         private VideoViewModel CreateViewModel(VideoModel videoModel)
@@ -85,7 +86,7 @@ namespace AI_Project.Services
             {
                 Id = videoModel.Id,
                 Title = videoModel.Title,
-                Path = videoModel.Path
+                Url = videoModel.Url
             };
         }
 
@@ -95,7 +96,7 @@ namespace AI_Project.Services
             return new VideoModel()
             {
                 Title = videoViewModel.Title,
-                Path = videoViewModel.Path
+                Url = videoViewModel.Url
             };
         }
     }

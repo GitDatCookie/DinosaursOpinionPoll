@@ -1,4 +1,5 @@
-﻿using AI_Project.ViewModels;
+﻿using AI_Project.Models.UserModels;
+using AI_Project.ViewModels;
 
 namespace AI_Project.Services.Interfaces
 {
@@ -9,5 +10,6 @@ namespace AI_Project.Services.Interfaces
         public void LogoutUser() {}
         public Task UpdateAdminUserModelAsync(AdminUserViewModel user);
         public SubjectUserViewModel CreateSubjectUser();
+        Task<SubjectUserModel?> GetUserModelAsync(Guid userId);
     }
 }

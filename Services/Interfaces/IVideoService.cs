@@ -6,12 +6,12 @@ namespace AI_Project.Services.Interfaces
 {
     public interface IVideoService
     {
-        public void CreateVideo(VideoViewModel video);
-        public void DeleteVideo(Guid videoId);
-        public void ChangeVideo(Guid videoId, VideoViewModel newVideoModel);
+        Task CreateVideoAsync(VideoViewModel video);
+        Task DeleteVideoAsync(Guid videoId);
+        Task UpdateVideoAsync(Guid videoId, VideoViewModel newVideoModel);
         Task<string> UploadVideoAsync(IFormFile videoFile);
-        public VideoModel GetVideo(Guid videoId);
-        public VideoViewModel GetVideoViewModel(Guid videoId);
-        public List<VideoViewModel> GetVideos();
+        Task<VideoModel> GetVideoAsync(Guid videoId);
+        Task<VideoViewModel> GetVideoViewModelAsync(Guid videoId);
+        Task<List<VideoViewModel>> GetVideosAsync();
     }
 }

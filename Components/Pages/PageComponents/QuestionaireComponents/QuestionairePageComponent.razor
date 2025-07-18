@@ -1,0 +1,40 @@
+﻿@using AI_Project.ViewModels
+
+<MudContainer>
+    @foreach (var item in CurrentPage.Items)
+    {
+        <DynamicComponentComponent ComponentType="@item.componentType"
+                                   QuestionComponentType="@item.questionComponentType"
+                                   ViewModel="@item.viewModelBase"
+                                   IsItemEditable="false" />
+    }
+    <MudButton Disabled="@IsLastPage" OnClick="NextPage">Next</MudButton>
+</MudContainer>
+
+
+<QuestionairePageTemplate PageViewModel="CurrentPage" />
+
+@code {
+    [Parameter]
+    public QuestionaireViewModel Questionaire { get; set; } = new();
+
+    [Parameter]
+    public SubjectUserViewModel User { get; set; } = new();
+
+    private int currentPageIndex = 0;
+
+    private QuestionairePageViewModel CurrentPage =>
+        Questionaire.PageList.ElementAtOrDefault(currentPageIndex) ?? new();
+
+    private bool IsLastPage => currentPageIndex >= Questionaire.PageList.Count - 1;
+
+    private void NextPage()
+    {
+        if (!IsLastPage)
+        {
+            currentPageIndex++;
+        }
+    }
+}
+
+}

@@ -1,0 +1,75 @@
+﻿@using MudBlazor
+@using MudBlazor.Utilities
+@using System.Reflection
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudGrid>
+                @foreach (var baseColor in BasePalette)
+                {
+                    <MudItem xs="4" sm="2">
+                        <div>
+                            <MudButton OnClick="@(() => SelectBaseColor(baseColor))"
+                                       Class="color-square"
+                                       DropShadow="true"
+                                       Style="@($"background-color: {baseColor.Base.ToString()}")" />
+                        </div>
+                    </MudItem>
+                }
+            </MudGrid>
+
+            @if (ShowShadingOptions)
+            {
+                <MudDivider />
+                
+                @* Main tonal colors row: Dark variants, then default, then light variants. *@
+                @if (MainShades.Any())
+                {
+                    <MudGrid Class="mt-2">
+                        @foreach (var shade in MainShades)
+                        {
+                            <MudItem xs="4" sm="2">
+                                <div>
+                                    <MudButton OnClick="@(() => SelectShade(shade))"
+                                               Class="color-square"
+                                               Style="@($"background-color: {shade.ToString()}")"
+                                               Variant="Variant.Text"
+                                               Color="Color.Transparent" />
+                                </div>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+
+                @* Accent colors in a separate row. *@
+                @if (AccentVariants.Any())
+                {
+                    <MudGrid Class="pt-4">
+                        @foreach (var accent in AccentVariants)
+                        {
+                            <MudItem xs="4" sm="2">
+                                <div>
+                                    <MudButton OnClick="@(() => SelectShade(accent))"
+                                               Class="color-square"
+                                               Style="@($"background-color: {accent.ToString()}")"
+                                               Variant="Variant.Text"
+                                               Color="Color.Transparent" />
+                                </div>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <LogoIcon LogoColour="SelectedColor" />
+        <MudSpacer />
+        <MudButton Color="Color.Primary" OnClick="Confirm">OK</MudButton>
+        <MudButton Color="Color.Secondary" OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+

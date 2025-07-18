@@ -8,9 +8,8 @@ namespace AI_Project.Services
         public EventNotificationService()
         {
         }
-
-        public event Action<EQuestionType>? QuestionChanged;
-        public event Action<EItemType>? ItemChanged;
+        public event Func<EQuestionComponentType, Task>? QuestionChanged;
+        public event Func<EComponentType, Task>? ItemChanged;
         public event Action? ContainerReset;
 
         public void NotifyContainerReset()
@@ -19,12 +18,12 @@ namespace AI_Project.Services
         }
 
 
-        public void NotifyItemChanged(EItemType itemType)
+        public void NotifyItemChanged(EComponentType itemType)
         {
             ItemChanged?.Invoke(itemType);
         }
 
-        public void NotifyQuestionChanged(EQuestionType questionType)
+        public void NotifyQuestionChanged(EQuestionComponentType questionType)
         {
             QuestionChanged?.Invoke(questionType);
         }

@@ -1,0 +1,23 @@
+﻿@page "/questionaire/{PublicToken}"
+@using AI_Project.Models.OrderModels
+@using MudBlazor
+
+@inject IUserService UserService
+@inject IQuestionaireService QuestionaireService
+
+<DynamicComponentComponent IsItemEditable="false" ItemType="EComponentType.Question" QuestionType="EQuestionComponentType.CheckBox"/>
+
+@code {
+    [Parameter]
+    public string PublicToken { get; set; } = "";
+
+    private QuestionaireViewModel questionaire { get; set; } = new();
+    private SubjectUserViewModel userViewModel { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        userViewModel = UserService.CreateSubjectUser();
+        questionaire = await QuestionaireService.GetQuestionaireViewModelByTokenAsync(PublicToken, userViewModel.IsTreatmentGroup);
+
+    }
+}

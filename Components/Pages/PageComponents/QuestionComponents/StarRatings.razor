@@ -1,0 +1,121 @@
+﻿@using AI_Project.ViewModels
+@inject IQuestionService questionService
+@inject IDialogService dialogService
+@inject ISnackbar snackbar
+@inherits QuestionaireComponentBase
+
+@if (!IsEditable)
+{
+    @if (ViewModel.TitleFieldType != EComponentTitleFieldType.RichTextTitleField && ViewModel.TitleFieldType != EComponentTitleFieldType.LabelAsTitleField)
+    {
+        <MudText Typo="Typo.h6" Class="mb-4 ml-4">@ViewModel.Title</MudText>
+    }
+    @if (ViewModel.TitleFieldType == EComponentTitleFieldType.RichTextTitleField)
+    {
+        <MudHtmlViewer Html="@ViewModel.Title" />
+    }
+
+    <MudItem Class="d-flex flex-column align-center">
+        <MudRating @bind-SelectedValue="RatingValue"
+        HoveredValueChanged="HandleHoveredValueChanged"
+        MaxValue="@ViewModel.Answers.Count"
+        RatingItemsStyle=@($"color:{ViewModel.ComponentStyle.ComponentColour}") />
+        <MudText Typo="Typo.subtitle2" Class="deep-purple-text mt-2">
+            @LabelText
+        </MudText>
+    </MudItem>
+
+    @if (IsItemEditable)
+    {
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => DeleteQuestionAsync())">
+                Delete Question
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => IsEditable = true)" Class="ml-5">
+                Edit Question
+            </MudButton>
+        </MudGrid>
+    }
+}
+else
+{
+    <StarRatingsTemplate TemplateViewModel="ViewModel" OnItemEdited="HandleQuestionEdited" />
+}
+
+@code {
+    public new QuestionViewModel ViewModel
+    {
+        get => (QuestionViewModel)base.ViewModel;
+        set => base.ViewModel = value;
+    }
+    [Parameter]
+    public bool IsItemEditable { get; set; }
+
+    private int selectedVal = 0;
+
+    private AnswerViewModel _selectedAnswer = new();
+    public AnswerViewModel SelectedAnswer
+    {
+        get => _selectedAnswer;
+        set
+        {
+            if (_selectedAnswer != value)
+            {
+                _selectedAnswer = value;
+                // Use your centralized base method for single selection.
+                UpdateUserSelectionSingle(_selectedAnswer, true);
+                // Optionally force UI refresh.
+                StateHasChanged();
+            }
+        }
+    }
+
+    private int RatingValue
+    {
+        get => selectedVal + 1;
+        set
+        {
+            if (value - 1 != selectedVal)
+            {
+                selectedVal = value - 1;
+                // Call the mapping method.
+                UpdateSelectedAnswer();
+            }
+        }
+    }
+
+    private int? activeVal;
+    private void HandleHoveredValueChanged(int? val)
+    {
+        activeVal = val.HasValue ? val.Value - 1 : null;
+    }
+
+    private string LabelText =>
+         (activeVal ?? selectedVal) is int idx && idx >= 0 && idx < ViewModel.Answers.Count
+            ? ViewModel.Answers[idx].AnswerText
+            : "Rate our product!";
+
+    private void HandleQuestionEdited(bool edit)
+    {
+        IsEditable = edit;
+    }
+
+    private void UpdateSelectedAnswer()
+    {
+        if (ViewModel.Answers != null && ViewModel.Answers.Count > selectedVal)
+        {
+            SelectedAnswer = ViewModel.Answers[selectedVal];
+        }
+        else
+        {
+            // Clear selection or provide a fallback if needed.
+            SelectedAnswer = new();
+        }
+    }
+
+    private async Task DeleteQuestionAsync()
+    {
+        await ConfirmDeleteAsync(ViewModel.Id, EComponentType.Question, EQuestionComponentType.StarRating);
+    }
+}

@@ -7,13 +7,15 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using AI_Project.Helpers;
 using AI_Project.Services.Interfaces;
+using Microsoft.Extensions.FileProviders;
 
 
 var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment())
 {
-    builder.Configuration.AddUserSecrets<Program>();
 }
+
+DotNetEnv.Env.Load();
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
@@ -64,7 +66,7 @@ builder.Services.AddServerSideBlazor()
         });
 
 builder.Services.AddDbContext<AI_ProjectDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_URL")));
 
 var app = builder.Build();
 
@@ -81,6 +83,44 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+#region EnvironmentVariables
+
+var imageUploadPath = Environment.GetEnvironmentVariable("IMAGE_UPLOAD_PATH");
+if (string.IsNullOrWhiteSpace(imageUploadPath))
+{
+    throw new InvalidOperationException("Environment variable 'IMAGE_UPLOAD_PATH' is not set.");
+}
+
+if (!Directory.Exists(imageUploadPath))
+{
+    throw new DirectoryNotFoundException($"The directory specified in 'IMAGE_UPLOAD_PATH' does not exist: {imageUploadPath}");
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imageUploadPath),
+    RequestPath = "/uploads/images"
+});
+
+var videoUploadPath = Environment.GetEnvironmentVariable("VIDEO_UPLOAD_PATH");
+
+if (string.IsNullOrWhiteSpace(videoUploadPath))
+{
+    throw new InvalidOperationException("Environment variable 'VIDEO_UPLOAD_PATH' is not set.");
+}
+
+if (!Directory.Exists(videoUploadPath))
+{
+    throw new DirectoryNotFoundException($"The directory specified in 'VIDEO_UPLOAD_PATH' does not exist: {imageUploadPath}");
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(videoUploadPath),
+    RequestPath = "/uploads/videos"
+});
+#endregion
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

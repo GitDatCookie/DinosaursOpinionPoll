@@ -1,4 +1,5 @@
 ﻿using AI_Project.Enums;
+using AI_Project.ViewModels.QuestionaireComponentViewModels.StyleComponentViewModels;
 using MudBlazor;
 using System.ComponentModel.DataAnnotations;
 
@@ -7,7 +8,7 @@ namespace AI_Project.ViewModels.QuestionaireComponentViewModels
     public class QuestionViewModel : QuestionaireComponentViewModelBase
     {
         [Required]
-        public EQuestionType QuestionType { get; set; }
+        public EQuestionComponentType QuestionType { get; set; }
 
         #region ForeignTables
         public ComponentStyleViewModel ComponentStyle { get; set; } = new();

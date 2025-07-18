@@ -6,10 +6,10 @@ namespace AI_Project.Services.Interfaces
 {
     public interface IQuestionaireComponentService
     {
-        Task CreateQuestionaireComponentAsync((QuestionaireComponentViewModelBase viewModel, EItemType itemType) questionaireComponent);
-        Task DeleteQuestionaireComponentAsync((Guid questionaireComponentId, EItemType itemType) questionaireComponent);
-        Task UpdateQuestionaireComponentAsync((Guid questionaireComponentId, QuestionaireComponentViewModelBase viewModel, EItemType itemType) questionaireComponent);
-        Task<QuestionaireComponentModelBase> GetQuestionaireComponentModelAsync((Guid questionaireComponentId, EItemType itemType) questionaireComponent);
+        Task CreateQuestionaireComponentAsync((QuestionaireComponentViewModelBase viewModel, EComponentType itemType) questionaireComponent);
+        Task DeleteQuestionaireComponentAsync((Guid questionaireComponentId, EComponentType itemType) questionaireComponent);
+        Task UpdateQuestionaireComponentAsync((Guid questionaireComponentId, QuestionaireComponentViewModelBase viewModel, EComponentType itemType) questionaireComponent);
+        Task<QuestionaireComponentModelBase> GetQuestionaireComponentModelAsync((Guid questionaireComponentId, EComponentType itemType) questionaireComponent);
         Task<QuestionaireComponentViewModelBase> GetQuestionaireComponentViewModelAsync(QuestionaireComponentModelBase questionaireComponent);
 
     }

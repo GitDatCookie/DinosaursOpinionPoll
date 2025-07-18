@@ -11,7 +11,8 @@ namespace AI_Project.Models.UserModels
         public bool IsTreatmentGroup { get; set; }
 
         #region ForeignTables
-        public ICollection<AnswerModel> Answers { get; set; } = new List<AnswerModel>();
+        public ICollection<AnswerModel> Answers { get; set; } = [];
+        public ICollection<AIConversationModel> Conversations { get; set; } = [];
         #endregion
     }
 }

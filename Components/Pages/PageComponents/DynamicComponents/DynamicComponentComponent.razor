@@ -1,0 +1,40 @@
+﻿<DynamicComponent 
+@key=ViewModel.Id
+                  Type="@GetComponentType(ComponentType,QuestionComponentType)"
+                  Parameters="@(new Dictionary<string, object> { { "ViewModel", ViewModel }, {"IsItemEditable", IsItemEditable}, {"UserViewModel", UserViewModel} })" />
+
+@code {
+    [Parameter] public EComponentType ComponentType{ get; set; }
+
+    [Parameter] public EQuestionComponentType QuestionComponentType { get; set; }
+
+    [Parameter] public QuestionaireComponentViewModelBase ViewModel { get; set; } = null!;
+
+    [Parameter] public SubjectUserViewModel? UserViewModel { get; set; } = null!;
+
+    [Parameter] public bool IsItemEditable { get; set; } = false;
+
+
+    private Type GetComponentType(EComponentType itemType, EQuestionComponentType questionType)
+    {
+        return itemType switch
+        {
+            EComponentType.Question => questionType switch
+            {
+                EQuestionComponentType.CheckBox => typeof(CheckBox),
+                EQuestionComponentType.RadioButton => typeof(RadioButtons),
+                EQuestionComponentType.StarRating => typeof(StarRatings),
+                EQuestionComponentType.Slider => typeof(Sliders),
+                EQuestionComponentType.SingleLine => typeof(SingleLineInput),
+                EQuestionComponentType.MultiLine => typeof(MultiLineInput),
+                EQuestionComponentType.DropDown => typeof(DropDown),
+                EQuestionComponentType.Number => typeof(NumberInput),
+                _ => throw new NotSupportedException($"Unsupported question type: {questionType}")
+            },
+            EComponentType.FreeText => typeof(FreeText),
+            EComponentType.Image => typeof(Image),
+            EComponentType.Video => typeof(Video),
+            _ => throw new NotSupportedException($"Unsupported item type: {itemType}")
+        };
+    }
+}

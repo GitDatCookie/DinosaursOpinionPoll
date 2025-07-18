@@ -9,6 +9,7 @@ namespace AI_Project.ViewModels
         public Guid UserId { get; set; }
         public bool IsTreatmentGroup { get; set; }
 
-        public List<AnswerViewModel> Answers { get; set; } = new List<AnswerViewModel>();
+        public List<AnswerViewModel> Answers { get; set; } = [];
+        public List<AIConversationViewModel> Conversations { get; set; } = new();
     }
 }

@@ -1,0 +1,55 @@
+﻿@using System.Text.Json
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="d-flex flex-column pa-4">
+    <MudForm @ref=mudForm>
+        <MudTextField @bind-Value="Title"
+        Placeholder="Give your image a title...."
+        Required
+        RequiredError="Title is Required"
+        Immediate />
+
+        <MudFileUpload 
+            T="IBrowserFile" 
+            Accept=".png, .jpg, .jpeg" 
+            FilesChanged="OnImageFileSelectedAsync"
+            MaximumFileCount="1">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Filled"
+                Color="Color.Primary"
+                StartIcon="@Icons.Material.Filled.FileUpload">
+                    Upload Image
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+
+        @if (FilePath is not null)
+        {
+            <MudPaper Class="d-flex justify-center align-center mt-4" Style="width: 100%; overflow: auto;">
+                <MudImage Src="@FilePath"
+                ObjectFit="ObjectFit.ScaleDown"
+                ObjectPosition="ObjectPosition.Center"
+                Alt="Image"
+                Style="max-width: 100%; height: auto;" />
+            </MudPaper>
+        }
+
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveImageAsync">
+                    Save Image
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditImageAsync">
+                    Update Image
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+

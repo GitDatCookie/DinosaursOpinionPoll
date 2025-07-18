@@ -1,0 +1,124 @@
+﻿@page "/chat"
+@using AI_Project.Services
+@using OpenAI.Chat
+@inject IAIService aiService
+
+<MudPaper Class="p-4 chat-container">
+	<MudStack>
+		@foreach (var message in messageProtocol)
+		{
+			<MudChat Color="MudBlazor.Color.Default" Elevation=0 Dense="true" Variant="Variant.Text" ChatPosition="@message.ChatPosition">
+				<MudChatHeader Name="@message.DisplayName" Time="@message.Message.TimeStamp.ToShortTimeString()" />
+				@if (message.IsLoading)
+				{
+					<MudChatBubble Color="@message.BubbleColor">
+						<MudSkeleton Animation="Animation.Wave" SkeletonType="SkeletonType.Text" Width="400px" />
+					</MudChatBubble>
+
+				}
+				else
+				{
+					<MudChatBubble Color="@message.BubbleColor">@message.Message.Text</MudChatBubble>
+				}
+			</MudChat>
+		}
+
+	</MudStack>
+	<MudStack Row AlignItems="AlignItems.Center" Class="mx-4">
+		<MudTextField @ref="textField"
+		T="string"
+		Class="flex-grow"
+		Placeholder="Type your message..."
+		@bind-Value="UserInput"
+		Immediate=true
+		OnKeyUp="HandleKeyUp" 
+		TextUpdateSuppression=false/>
+		<MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Primary" OnClick="@(() => HandleUserMessage(UserInput))" />
+	</MudStack>
+</MudPaper>
+
+@code {
+	[Parameter, EditorRequired] public Guid UserId { get; set; }
+
+	private string UserInput { get; set; } = string.Empty;
+	private List<ChatMessage> messageProtocol = new List<ChatMessage>();
+
+	private AIConversationViewModel conversationViewModel = new();
+
+	MudTextField<string> textField = new();
+
+	private async Task HandleUserMessage(string userInput)
+	{
+		if (!string.IsNullOrWhiteSpace(userInput))
+		{
+			await InvokeAsync(() => textField.ResetAsync());
+
+			var message = new AIMessageViewModel
+			{
+				MessageType = EAIMessageType.User,
+				TimeStamp = DateTime.Now,
+				Text = userInput
+			};
+
+			conversationViewModel.Messages.Add(message);
+
+			var userMessage = new ChatMessage
+			{
+				Message = message
+			};
+			messageProtocol.Add(userMessage);
+
+			// Simulate the LM's response
+			await HandleLanguageModelResponse(message);
+			await InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private async Task HandleLanguageModelResponse(AIMessageViewModel messageViewModel)
+	{
+		var loadingMessage = new ChatMessage
+			{
+				IsLoading = true,
+				Message = new()
+				{
+					MessageType = EAIMessageType.AIBot
+				},
+			};
+		messageProtocol.Add(loadingMessage);
+
+		var chatResponse = await aiService.GetAnswerAsync(messageViewModel);
+
+		if (chatResponse.Item2 != null) conversationViewModel.Summaries.Add(chatResponse.Item2);
+
+		var message = new AIMessageViewModel
+		{
+			MessageType = EAIMessageType.AIBot,
+			TimeStamp = DateTime.Now,
+			Text = chatResponse.Item1,
+		};
+
+		conversationViewModel.Messages.Add(message);
+
+		loadingMessage.Message = message;
+		loadingMessage.IsLoading = false;
+		
+	}
+
+	private async Task HandleKeyUp(KeyboardEventArgs args)
+	{
+		if (args.Key == "Enter" && !string.IsNullOrEmpty(UserInput))
+		{
+			string userInput = UserInput;
+			await HandleUserMessage(userInput);
+		}
+	}
+
+	private class ChatMessage
+	{
+		public bool IsLoading { get; set; } = false;
+		public AIMessageViewModel Message { get; set; } = new();
+		public ChatBubblePosition ChatPosition => Message.MessageType == EAIMessageType.User ? ChatBubblePosition.End : ChatBubblePosition.Start;
+		public string DisplayName => Message.MessageType == EAIMessageType.User ? "User" : "Language Model";
+		public MudBlazor.Color BubbleColor => Message.MessageType == EAIMessageType.User ? MudBlazor.Color.Primary : MudBlazor.Color.Default;
+	}
+}

@@ -1,0 +1,57 @@
+﻿@using System.Text.Json
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+@inherits QuestionaireComponentBase
+
+<MudPaper Class="d-flex flex-column pa-4">
+
+    <MudForm @ref="mudForm">
+        <MudTextField @bind-Value="Title"
+        Placeholder="Give your video a title...."
+        Required
+        RequiredError="Title is required"
+        Immediate />
+
+        <MudFileUpload 
+            T="IBrowserFile"
+            Accept=".mp4, .webm, .mpg, .avi, .mkv, .mov"
+            FilesChanged="OnVideoFileSelectedAsync"
+            MaximumFileCount="1">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Filled"
+                Color="Color.Primary"
+                StartIcon="@Icons.Material.Filled.VideoLibrary">
+                    Upload Video
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+
+        @if (FilePath is not null)
+        {
+            <MudPaper Class="d-flex justify-center align-center mt-4" Style="width: 100%; overflow: auto;">
+                <video controls
+                src="@FilePath"
+                style="max-width: 100%; height: auto;">
+                    Your browser does not support the video tag.
+                </video>
+            </MudPaper>
+        }
+
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="SaveVideoAsync">
+                    Save Video
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="EditVideoAsync">
+                    Update Video
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+
+

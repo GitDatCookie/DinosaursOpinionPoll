@@ -3,10 +3,12 @@ using AI_Project.Enums;
 using AI_Project.Models;
 using AI_Project.Models.OrderModels;
 using AI_Project.Models.QuestionaireComponentModels;
+using AI_Project.Models.QuestionaireComponentModels.StyleComponents;
 using AI_Project.Models.UserModels.SubjectUserModelComponents;
 using AI_Project.Services.Interfaces;
 using AI_Project.ViewModels;
 using AI_Project.ViewModels.QuestionaireComponentViewModels;
+using AI_Project.ViewModels.QuestionaireComponentViewModels.StyleComponentViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace AI_Project.Services
@@ -26,11 +28,7 @@ namespace AI_Project.Services
         }
         public async Task UpdateQuestionAsync(Guid questionId, QuestionViewModel updatedModel)
         {
-            QuestionModel model = await GetQuestionAsync(questionId);
-
-            if (model == null)
-                throw new KeyNotFoundException($"Question {questionId} not found.");
-
+            QuestionModel model = await GetQuestionAsync(questionId) ?? throw new KeyNotFoundException($"Question {questionId} not found.");
             model.Title = updatedModel.Title;
             model.TitleFieldType = updatedModel.TitleFieldType;
             model.QuestionType = updatedModel.QuestionType;
@@ -74,10 +72,7 @@ namespace AI_Project.Services
                 .Include(x => x.Answers)
                 .FirstOrDefaultAsync(x => x.Id == questionId);
 
-            if (entity == null)
-                throw new KeyNotFoundException($"Question {questionId} not found.");
-
-            return entity;
+            return entity ?? throw new KeyNotFoundException($"Question {questionId} not found.");
         }
         public async Task<QuestionViewModel> GetQuestionViewModelAsync(Guid questionId)
         {
@@ -90,9 +85,9 @@ namespace AI_Project.Services
                 .Include(q => q.Answers)
                 .ToListAsync();
 
-            return list.Select(ToViewModel).ToList();
+            return [.. list.Select(ToViewModel)];
         }
-        public async Task<List<QuestionViewModel>> GetQuestionsByTypeAsync(EQuestionType questionType)
+        public async Task<List<QuestionViewModel>> GetQuestionsByTypeAsync(EQuestionComponentType questionType)
         {
             var list = await _dbContext.Questions
                 .AsNoTracking()
@@ -101,7 +96,7 @@ namespace AI_Project.Services
                 .Include(q => q.Answers)
                 .ToListAsync();
 
-            return list.Select(ToViewModel).ToList();
+            return [.. list.Select(ToViewModel)];
         }
         #endregion
 
@@ -111,10 +106,9 @@ namespace AI_Project.Services
         private QuestionModel ToModel(QuestionViewModel viewModel)
         {
             var answerModels = viewModel.Answers != null
-            ? viewModel.Answers
+            ? [.. viewModel.Answers
                 .Where(answers => answers != null)
-                .Select(answer => new AnswerModel { Answer = answer.AnswerText })
-                .ToList()
+                .Select(answer => new AnswerModel { Answer = answer.AnswerText })]
             : new List<AnswerModel>();
 
             var componentStyleModel = new ComponentStyleModel();
@@ -142,7 +136,7 @@ namespace AI_Project.Services
                         AnswerText = a.Answer
                     })
                     .ToList()
-                : new List<AnswerViewModel>();
+                : [];
 
             var componentStyleViewModel = new ComponentStyleViewModel();
             ComponentStyleModelToView(model.ComponentStyle, componentStyleViewModel);
@@ -207,10 +201,9 @@ namespace AI_Project.Services
         }
         private void SyncAnswers(QuestionModel model, IList<AnswerViewModel> updatedAnswers)
         {
-            List<AnswerModel> removedAnswers = model.Answers
+            List<AnswerModel> removedAnswers = [.. model.Answers
                 .Where(modelAnswers => updatedAnswers
-                .All(viewModelAnswers => viewModelAnswers.AnswerId != modelAnswers.AnswerID))
-                .ToList();
+                .All(viewModelAnswers => viewModelAnswers.AnswerId != modelAnswers.AnswerID))];
             _dbContext.Answers.RemoveRange(removedAnswers);
 
             foreach (var answer in updatedAnswers)

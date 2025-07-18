@@ -1,8 +1,13 @@
 ﻿namespace AI_Project.Services
 {
+    using AI_Project.DBContext;
+    using AI_Project.Models.UserModels.SubjectUserModelComponents;
     using AI_Project.Services.Interfaces;
+    using AI_Project.ViewModels;
     using OpenAI;
     using OpenAI.Chat;
+    using System.Threading.Tasks;
+
     public class AIService : IAIService
     {
         // OpenAI chat client and conversation history.
@@ -10,11 +15,14 @@
         private List<ChatMessage> conversationHistory = new List<ChatMessage>();
         private int conversationCount = 0;
         private const int ConversationWindow = 5;
-        
+        private readonly AI_ProjectDbContext _dbContext;
+        private readonly IUserService _userService;
 
-        public AIService(IConfiguration configuration)
+        public AIService(AI_ProjectDbContext dbContext, IUserService userService)
         {
-            var secretKey = configuration["ChatGptKey"];
+            _dbContext = dbContext;
+            _userService = userService;
+            var secretKey = Environment.GetEnvironmentVariable("API_KEY");
             if (string.IsNullOrWhiteSpace(secretKey))
             {
                 throw new InvalidOperationException("Secret key is not configured.");
@@ -24,44 +32,29 @@
         }
 
         // Get answer asynchronously and save each exchange.
-        public async Task<string> GetAnswerAsync(string question)
+        public async Task<(string, string?)> GetAnswerAsync(AIMessageViewModel userMessage)
         {
-            // Add the user's message to the conversation history.
-            conversationHistory.Add(new UserChatMessage(question));
+            string? summary = null;
+            conversationHistory.Add(userMessage.Text);
 
-            // Get the assistant's answer with the current conversation context.
             var response = await Client.CompleteChatAsync(conversationHistory);
             var answer = response.Value.Content.Select(x => x.Text).FirstOrDefault();
 
-            // Append the assistant's answer to the conversation history.
             conversationHistory.Add(new AssistantChatMessage(answer));
-
-            // Increase the conversation counter (each exchange counts as one).
             conversationCount++;
 
-            // Save the current Q&A pair in your database.
-            //var exchange = new ChatExchange
-            //{
-            //    Question = question,
-            //    Answer = answer,
-            //    Timestamp = DateTime.UtcNow
-            //};
-            //_chatContext.ChatExchanges.Add(exchange);
-            //await _chatContext.SaveChangesAsync();
-
-            // If the conversation window has been reached, summarize and reset the context.
             if (conversationCount >= ConversationWindow)
             {
-                await SummarizeConversationAsync();
+                summary = await SummarizeConversationAsync();
                 conversationCount = 0;
             }
 
-            return $"{answer}";
+            return ($"{answer}", summary);
         }
 
         // Summarize the conversation to keep the context manageable.
         // The summary replaces the full conversation history.
-        private async Task SummarizeConversationAsync()
+        private async Task<string> SummarizeConversationAsync()
         {
             // Aggregate the user and assistant messages into one text block.
             var conversationText = string.Join("\n",
@@ -86,7 +79,36 @@
             // Clear the conversation history and restart with the summarized context.
             conversationHistory.Clear();
             conversationHistory.Add(new SystemChatMessage($"Conversation summary so far: {summary}"));
+
+            return summary;
         }
 
+        public async Task CreateConversationAsync(AIConversationViewModel viewModel, List<string> summaries, Guid userId)
+        {
+            _dbContext.Add(ToModel(viewModel, summaries, userId));
+            await _dbContext.SaveChangesAsync();
+        }
+
+        private async Task<AIConversationModel> ToModel(AIConversationViewModel viewModel, List<string> summaries, Guid userId)
+        {
+            var messageModelList = viewModel.Messages != null 
+                ?[.. viewModel.Messages
+                .Where(c => c.Text != null)
+                .Select(message => new AIMessageModel
+                {
+                    MessageType = message.MessageType,
+                    TimeStamp = message.TimeStamp,
+                    Text = message.Text,
+                })] : new List<AIMessageModel>();
+
+            var user =  await _userService.GetUserModelAsync(userId);
+
+            return new AIConversationModel
+            {
+                Messages = messageModelList,
+                Summaries = summaries,
+                User = user,
+            };
+        }
     }
 }

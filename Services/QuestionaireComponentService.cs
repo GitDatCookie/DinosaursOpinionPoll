@@ -21,11 +21,11 @@ namespace AI_Project.Services
             _textService = textService;
             _imageService = imageService;
         }
-        public async Task UpdateQuestionaireComponentAsync((Guid questionaireComponentId, QuestionaireComponentViewModelBase viewModel, EItemType itemType) questionaireComponent)
+        public async Task UpdateQuestionaireComponentAsync((Guid questionaireComponentId, QuestionaireComponentViewModelBase viewModel, EComponentType itemType) questionaireComponent)
         {
             switch (questionaireComponent.itemType)
             {
-                case EItemType.Question:
+                case EComponentType.Question:
                     if (questionaireComponent.viewModel is QuestionViewModel questionViewModel)
                     {
                         await _questionService.UpdateQuestionAsync(questionaireComponent.questionaireComponentId, questionViewModel);
@@ -35,17 +35,17 @@ namespace AI_Project.Services
                         throw new InvalidCastException("The viewModel is not a QuestionViewModel.");
                     }
                     break;
-                case EItemType.Video:
+                case EComponentType.Video:
                     if (questionaireComponent.viewModel is VideoViewModel videoViewModel)
                     {
-                        _videoService.ChangeVideo(questionaireComponent.questionaireComponentId, videoViewModel);
+                        await _videoService.UpdateVideoAsync(questionaireComponent.questionaireComponentId, videoViewModel);
                     }
                     else
                     {
                         throw new InvalidCastException("The viewModel is not a VideoViewModel.");
                     }
                     break;
-                case EItemType.Image:
+                case EComponentType.Image:
                     if (questionaireComponent.viewModel is ImageViewModel imageViewModel)
                     {
                         _imageService.ChangeImage(questionaireComponent.questionaireComponentId, imageViewModel);
@@ -55,7 +55,7 @@ namespace AI_Project.Services
                         throw new InvalidCastException("The viewModel is not a ImageViewModel.");
                     }
                     break;
-                case EItemType.FreeText:
+                case EComponentType.FreeText:
                     if (questionaireComponent.viewModel is FreeTextViewModel textViewModel)
                     {
                         _textService.ChangeText(questionaireComponent.questionaireComponentId, textViewModel);
@@ -67,11 +67,11 @@ namespace AI_Project.Services
                     break;
             }
         }
-        public async Task CreateQuestionaireComponentAsync((QuestionaireComponentViewModelBase viewModel, EItemType itemType) questionaireComponent)
+        public async Task CreateQuestionaireComponentAsync((QuestionaireComponentViewModelBase viewModel, EComponentType itemType) questionaireComponent)
         {
             switch (questionaireComponent.itemType)
             {
-                case EItemType.Question:
+                case EComponentType.Question:
                     if (questionaireComponent.viewModel is QuestionViewModel questionViewModel)
                     {
                         await _questionService.CreateQuestionAsync(questionViewModel);
@@ -81,17 +81,17 @@ namespace AI_Project.Services
                         throw new InvalidCastException("The viewModel is not a QuestionViewModel.");
                     }
                     break;
-                case EItemType.Video:
+                case EComponentType.Video:
                     if (questionaireComponent.viewModel is VideoViewModel videoViewModel)
                     {
-                        _videoService.CreateVideo(videoViewModel);
+                        await _videoService.CreateVideoAsync(videoViewModel);
                     }
                     else
                     {
                         throw new InvalidCastException("The viewModel is not a VideoViewModel.");
                     }
                     break;
-                case EItemType.Image:
+                case EComponentType.Image:
                     if (questionaireComponent.viewModel is ImageViewModel imageViewModel)
                     {
                         _imageService.CreateImage(imageViewModel);
@@ -101,7 +101,7 @@ namespace AI_Project.Services
                         throw new InvalidCastException("The viewModel is not a ImageViewModel.");
                     }
                     break;
-                case EItemType.FreeText:
+                case EComponentType.FreeText:
                     if (questionaireComponent.viewModel is FreeTextViewModel textViewModel)
                     {
                         _textService.CreateText(textViewModel);
@@ -113,46 +113,41 @@ namespace AI_Project.Services
                     break;
             }
         }
-        public async Task DeleteQuestionaireComponentAsync((Guid questionaireComponentId, EItemType itemType) questionaireComponent)
+        public async Task DeleteQuestionaireComponentAsync((Guid questionaireComponentId, EComponentType itemType) questionaireComponent)
         {
             switch (questionaireComponent.itemType)
             {
-                case EItemType.Question:
+                case EComponentType.Question:
                     await _questionService.DeleteQuestionAsync(questionaireComponent.questionaireComponentId);
                     break;
-                case EItemType.Video:
-                    _videoService.DeleteVideo(questionaireComponent.questionaireComponentId);
+                case EComponentType.Video:
+                    await _videoService.DeleteVideoAsync(questionaireComponent.questionaireComponentId);
                     break;
-                case EItemType.Image:
+                case EComponentType.Image:
                     _imageService.DeleteImage(questionaireComponent.questionaireComponentId);
                     break;
-                case EItemType.FreeText:
+                case EComponentType.FreeText:
                     _textService.DeleteText(questionaireComponent.questionaireComponentId);
                     break;
             }
         }
-        public async Task<QuestionaireComponentModelBase> GetQuestionaireComponentModelAsync((Guid questionaireComponentId, EItemType itemType) questionaireComponent)
+        public async Task<QuestionaireComponentModelBase> GetQuestionaireComponentModelAsync((Guid questionaireComponentId, EComponentType itemType) questionaireComponent)
         {
-            switch (questionaireComponent.itemType)
+            return questionaireComponent.itemType switch
             {
-                case EItemType.Question:
-                    return await _questionService.GetQuestionAsync(questionaireComponent.questionaireComponentId);
-                case EItemType.Video:
-                    return _videoService.GetVideo(questionaireComponent.questionaireComponentId);
-                case EItemType.Image:
-                    return _imageService.GetImage(questionaireComponent.questionaireComponentId);
-                case EItemType.FreeText:
-                    return _textService.GetText(questionaireComponent.questionaireComponentId);
-                default:
-                    throw new NotSupportedException($"The item type {questionaireComponent.itemType} is not supported.");
-            }
+                EComponentType.Question => await _questionService.GetQuestionAsync(questionaireComponent.questionaireComponentId),
+                EComponentType.Video => await _videoService.GetVideoAsync(questionaireComponent.questionaireComponentId),
+                EComponentType.Image => _imageService.GetImage(questionaireComponent.questionaireComponentId),
+                EComponentType.FreeText => _textService.GetText(questionaireComponent.questionaireComponentId),
+                _ => throw new NotSupportedException($"The item type {questionaireComponent.itemType} is not supported."),
+            };
         }
         public async Task<QuestionaireComponentViewModelBase> GetQuestionaireComponentViewModelAsync(QuestionaireComponentModelBase questionaireComponent)
         {
             return questionaireComponent switch
             {
                 QuestionModel question => await _questionService.GetQuestionViewModelAsync(question.Id),
-                VideoModel video => _videoService.GetVideoViewModel(video.Id),
+                VideoModel video => await _videoService.GetVideoViewModelAsync(video.Id),
                 ImageModel image => _imageService.GetImageViewModel(image.Id),
                 FreeTextModel freeText => _textService.GetTextViewModel(freeText.Id),
                 _ => throw new NotSupportedException($"Component type {questionaireComponent.GetType().Name} is not supported.")

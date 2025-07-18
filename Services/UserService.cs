@@ -111,6 +111,10 @@ namespace AI_Project.Services
             };
         }
 
+        public async Task<SubjectUserModel?> GetUserModelAsync(Guid userId)
+        {
+            return await _dbContext.SubjectUsers.Where(u => u.UserId == userId).FirstOrDefaultAsync();
+        }
 
         public Task UpdateAdminUserModelAsync(AdminUserViewModel user)
         {

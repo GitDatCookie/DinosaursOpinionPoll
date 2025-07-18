@@ -1,0 +1,85 @@
+﻿@inherits QuestionaireComponentBase
+
+<MudPaper  Class="pa-4">
+    <MudForm @ref=mudForm>
+        <MudStack Row>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.ColorLens" Color="Color.Primary" OnClick="PickColourAsync" Class="float-end" />
+        </MudStack>
+
+        <MudStack Row>
+            @if (!IsRichText && !IsLabel)
+            {
+                <MudTextField @bind-Value="Title"
+                Placeholder="Type in your Question..."
+                Required
+                RequiredError="Question is Required"
+                Immediate />
+            }
+            @if (IsRichText)
+            {
+                <MudHtmlEditor @bind-Html=@Title style="width:100%">
+                    <MudHtmlToolbarOptions InsertImage="false" />
+                </MudHtmlEditor>
+                @if (isSubmitted && string.IsNullOrWhiteSpace(CleanRichText(TemplateViewModel, Title)))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        Question is Required
+                    </MudText>
+                }
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Primary" OnClick="@(()=>SetQuestionOptionsAsync(EQuestionAnswerFieldType.NumberAnswerField, TemplateViewModel))" Class="float-end" />
+        </MudStack>
+
+        @if (TemplateViewModel.ComponentStyle.NumericFieldStyle?.NumberType == ENumberType.Integer)
+        {
+            <MudNumericField Class="@(TemplateViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
+            T="int"
+            Label="@TemplateViewModel.ComponentStyle.Label"
+            Variant="@TemplateViewModel.ComponentStyle.TextVariant"
+            Placeholder="@TemplateViewModel.ComponentStyle.Placeholder"
+            HelperText="@TemplateViewModel.ComponentStyle.HelperText"
+            Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")
+            @attributes="GetMinMaxAttributes()">
+            </MudNumericField>
+        }
+        else
+        {
+            <MudNumericField Class="@(TemplateViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
+            T="float"
+            Label="@TemplateViewModel.ComponentStyle.Label"
+            Variant="@TemplateViewModel.ComponentStyle.TextVariant"
+            Placeholder="@TemplateViewModel.ComponentStyle.Placeholder"
+            HelperText="@TemplateViewModel.ComponentStyle.HelperText"
+            Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")
+            @attributes="GetMinMaxAttributes()">
+            </MudNumericField>
+        }
+
+
+
+        <MudGrid Class="d-flex pl-5 mt-6">
+            @if (!IsEditable)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@SaveQuestion">
+                    Save Question
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EditQuestion">
+                    Edit Question
+                </MudButton>
+            }
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+
+
+
+
+<style>
+    .label-custom-color .mud-input-label {
+        color: @ComponentColour !important;
+    }
+</style>

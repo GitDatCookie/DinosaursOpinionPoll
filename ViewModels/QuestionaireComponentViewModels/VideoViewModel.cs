@@ -2,7 +2,7 @@
 {
     public class VideoViewModel : QuestionaireComponentViewModelBase
     {
-        public string Path { get; set; } = null!;
+        public string Url { get; set; } = null!;
 
     }
 }

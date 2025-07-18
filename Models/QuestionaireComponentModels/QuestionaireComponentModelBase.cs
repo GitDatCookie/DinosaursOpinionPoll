@@ -9,7 +9,7 @@ namespace AI_Project.Models.QuestionaireComponentModels
         [Key]
         public Guid Id { get; set; }
         public string Title { get; set; }
-        public ETitleFieldType TitleFieldType { get; set; }
+        public EComponentTitleFieldType TitleFieldType { get; set; }
         public bool IsRandomised { get; set; }
         public EQuestionGroupType GroupType { get; set; } = EQuestionGroupType.Both;
         public RandomGroupModel? RandomGroup { get; set; }

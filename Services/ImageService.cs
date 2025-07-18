@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore;
 using AI_Project.Models.QuestionaireComponentModels;
 using AI_Project.ViewModels.QuestionaireComponentViewModels;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AI_Project.Services
 {
@@ -27,7 +28,7 @@ namespace AI_Project.Services
         {
             ImageModel imageToBeChanged = GetImage(imageId);
             imageToBeChanged.Title = newImageViewModel.Title;
-            imageToBeChanged.Data = newImageViewModel.Data;
+            imageToBeChanged.Url = newImageViewModel.Url;
 
             _dbContext.SaveChanges();
         }
@@ -63,7 +64,7 @@ namespace AI_Project.Services
             {
                 Id = imageModel.Id,
                 Title = imageModel.Title,
-                Data = imageModel.Data
+                Url = imageModel.Url
             };
         }
 
@@ -72,10 +73,9 @@ namespace AI_Project.Services
             return new ImageModel()
             {
                 Title = imageViewModel.Title,
-                Data = imageViewModel.Data
+                Url = imageViewModel.Url
             };
         }
-
 
     }
 

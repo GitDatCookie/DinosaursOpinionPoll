@@ -1,0 +1,18 @@
+﻿<MudListItem T="string" Text="@Title" Icon="@Icon" OnClick="HandleOnClick" />
+
+@code {
+    [Parameter] public EventCallback<(EComponentType, EQuestionComponentType)> OnTemplateSelected { get; set; }
+
+    [Parameter] public EQuestionComponentType QuestionType { get; set; }
+
+    [Parameter] public EComponentType ItemType { get; set; }
+
+    [Parameter] public string Icon { get; set; } = "";
+
+    [Parameter] public string Title { get; set; } = "";
+
+    private async Task HandleOnClick()
+    {
+        await OnTemplateSelected.InvokeAsync((ItemType, QuestionType));
+    }
+}

@@ -1,0 +1,33 @@
+﻿<DynamicComponent Type="@GetTemplateType(ItemType,QuestionType)" Parameters="@(new Dictionary<string, object> { { "TemplateViewModel", ViewModel } })" />
+
+@code {
+    [Parameter] public EComponentType ItemType{ get; set; }
+
+    [Parameter] public EQuestionComponentType QuestionType { get; set; }
+
+    [Parameter] public QuestionaireComponentViewModelBase ViewModel { get; set; } = null!;
+
+    private Type GetTemplateType(EComponentType itemType, EQuestionComponentType questionType)
+    {
+        return itemType switch
+        {
+            EComponentType.Question => questionType switch
+            {
+                EQuestionComponentType.CheckBox => typeof(CheckBoxTemplate),
+                EQuestionComponentType.RadioButton => typeof(RadioButtonsTemplate),
+                EQuestionComponentType.StarRating => typeof(StarRatingsTemplate),
+                EQuestionComponentType.Slider => typeof(SlidersTemplate),
+                EQuestionComponentType.SingleLine => typeof(SingleLineInputTemplate),
+                EQuestionComponentType.MultiLine => typeof(MultiLineInputTemplate),
+                EQuestionComponentType.DropDown => typeof(DropDownTemplate),
+                EQuestionComponentType.Number => typeof(NumberInputTemplate),
+                _ => throw new NotSupportedException($"Unsupported question type: {questionType}")
+            },
+            EComponentType.FreeText => typeof(FreeTextTemplate),
+            EComponentType.Image => typeof(ImageTemplate),
+            EComponentType.Video => typeof(VideoTemplate),
+            _ => throw new NotSupportedException($"Unsupported item type: {itemType}")
+        };
+    }
+}
+
