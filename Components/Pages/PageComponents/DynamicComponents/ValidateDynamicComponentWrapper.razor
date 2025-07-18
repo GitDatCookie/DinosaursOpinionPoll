@@ -1,0 +1,56 @@
+﻿@RenderDynamicComponent
+
+@code {
+    private IValidateComponent? _instance;
+
+    [Parameter] public EComponentType ComponentType { get; set; }
+    [Parameter] public EQuestionComponentType QuestionComponentType { get; set; }
+
+    [Parameter] public Dictionary<string, object> Parameters { get; set; } = new();
+
+    public bool Validate()
+    {
+        return _instance?.Validate() ?? true;
+    }
+
+    private RenderFragment RenderDynamicComponent => builder =>
+    {
+        var seq = 0;
+        builder.OpenComponent(seq++, GetComponentType(ComponentType, QuestionComponentType));
+
+        foreach (var kvp in Parameters)
+        {
+            builder.AddAttribute(seq++, kvp.Key, kvp.Value);
+        }
+
+        builder.AddComponentReferenceCapture(seq++, inst =>
+        {
+            _instance = inst as IValidateComponent;
+        });
+
+        builder.CloseComponent();
+    };
+
+    private Type GetComponentType(EComponentType itemType, EQuestionComponentType questionType)
+    {
+        return itemType switch
+        {
+            EComponentType.Question => questionType switch
+            {
+                EQuestionComponentType.CheckBox => typeof(CheckBox),
+                EQuestionComponentType.RadioButton => typeof(RadioButtons),
+                EQuestionComponentType.StarRating => typeof(StarRatings),
+                EQuestionComponentType.Slider => typeof(Sliders),
+                EQuestionComponentType.SingleLine => typeof(SingleLineInput),
+                EQuestionComponentType.MultiLine => typeof(MultiLineInput),
+                EQuestionComponentType.DropDown => typeof(DropDown),
+                EQuestionComponentType.Number => typeof(NumberInput),
+                _ => throw new NotSupportedException($"Unsupported question type: {questionType}")
+            },
+            EComponentType.FreeText => typeof(FreeText),
+            EComponentType.Image => typeof(Image),
+            EComponentType.Video => typeof(Video),
+            _ => throw new NotSupportedException($"Unsupported item type: {itemType}")
+        };
+    }
+}

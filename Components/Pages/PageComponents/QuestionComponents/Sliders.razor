@@ -15,7 +15,9 @@
 
         <MudStack >
             <MudItem Class="d-flex flex-column align-center mt-4">
-                <MudSlider TickMarks="true"
+                <MudSlider 
+                    @bind-Value=SelectedIndex
+                    TickMarks="true"
                            TickMarkLabels="@(ViewModel.Answers.Select(answer => answer.AnswerText).ToArray())"
                            Step="1"
                            Style=@($"width:85%; --mud-palette-primary:{ViewModel.ComponentStyle.ComponentColour};" )
@@ -52,6 +54,51 @@ else
     }
     [Parameter]
     public bool IsItemEditable { get; set; }
+
+    private int selectedIndex;
+    private int SelectedIndex
+    {
+        get => selectedIndex;
+        set
+        {
+            if (selectedIndex == value)
+                return;
+
+            selectedIndex = value;
+
+            if (ViewModel.Answers.ElementAtOrDefault(selectedIndex) is AnswerViewModel answer)
+            {
+                SelectedAnswer = answer;
+            }
+        }
+    }
+
+    private AnswerViewModel? selectedAnswer;
+    private AnswerViewModel? SelectedAnswer
+    {
+        get => selectedAnswer;
+        set
+        {
+            if (selectedAnswer == value)
+                return;
+
+            selectedAnswer = value;
+
+            if (selectedAnswer != null && UserViewModel != null)
+            {
+                UpdateUserSelectionSingle(selectedAnswer, isSelected: true);
+            }
+        }
+    }
+
+    public override bool Validate()
+    {
+        var selectedAnswers = UserViewModel.Answers
+        .Where(answer => answer.QuestionId == ViewModel.Id)
+        .ToList();
+
+        return selectedAnswers.Any() == true;
+    }
 
     private void HandleQuestionEdited(bool edit)
     {

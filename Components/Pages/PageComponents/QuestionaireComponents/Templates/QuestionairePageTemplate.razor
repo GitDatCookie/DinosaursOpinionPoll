@@ -26,8 +26,8 @@
         <MudCardContent>
             @foreach (var item in PageViewModel.Items)
             {
-                <DynamicComponentComponent ItemType="@item.componentType"
-                QuestionType="@item.questionComponentType"
+                <DynamicComponentComponent ComponentType="@item.componentType"
+                QuestionComponentType="@item.questionComponentType"
                 ViewModel="@item.viewModelBase"
                 IsItemEditable="false" />
             }

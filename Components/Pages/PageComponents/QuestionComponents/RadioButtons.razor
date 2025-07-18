@@ -16,7 +16,7 @@
     }
 
     <MudRadioGroup T="AnswerViewModel"
-    @bind-SelectedOption="selectedOption"
+    @bind-SelectedOption="SelectedAnswer"
     ValueChanged="OnSelectedOptionChanged">
         @foreach (var answer in ViewModel.Answers)
         {
@@ -54,24 +54,36 @@ else
     }
     [Parameter] public bool IsItemEditable { get; set; }
 
-    private AnswerViewModel _selectedOption = new();
-
-    private AnswerViewModel selectedOption
+    private AnswerViewModel? selectedAnswer;
+    private AnswerViewModel? SelectedAnswer
     {
-        get => _selectedOption;
+        get => selectedAnswer;
         set
         {
-            if (_selectedOption != value)
+            if (selectedAnswer == value)
+                return;
+
+            selectedAnswer = value;
+
+            if (selectedAnswer != null && UserViewModel != null)
             {
-                _selectedOption = value;
-                UpdateUserSelectionSingle(_selectedOption, true);
+                UpdateUserSelectionSingle(selectedAnswer, isSelected: true);
             }
         }
     }
 
+    public override bool Validate()
+    {
+        var selectedAnswers = UserViewModel.Answers
+        .Where(answer => answer.QuestionId == ViewModel.Id)
+        .ToList();
+
+        return selectedAnswers.Any() == true;
+    }
+
     private void OnSelectedOptionChanged(AnswerViewModel newSelection)
     {
-        selectedOption = newSelection;
+        SelectedAnswer = newSelection;
     }
 
     private void HandleQuestionEdited(bool edit)

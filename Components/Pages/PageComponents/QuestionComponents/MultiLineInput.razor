@@ -17,14 +17,15 @@
     }
 
     <MudTextField Class="@(ViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
-                  T="string"
-                  Label="@ViewModel.ComponentStyle.Label"
-                  Variant="@ViewModel.ComponentStyle.TextVariant"
-                  Placeholder="@ViewModel.ComponentStyle.Placeholder"
-                  HelperText="@ViewModel.ComponentStyle.HelperText"
-                  AutoGrow
-                  MaxLines="20"
-                  Style=@($"--mud-palette-action-default: {ViewModel.ComponentStyle.ComponentColour}; --mud-palette-primary: {ViewModel.ComponentStyle.ComponentColour};")></MudTextField>
+    T="string"
+    @bind-Value="UserAnswer.AnswerText"
+    Label="@ViewModel.ComponentStyle.Label"
+    Variant="@ViewModel.ComponentStyle.TextVariant"
+    Placeholder="@ViewModel.ComponentStyle.Placeholder"
+    HelperText="@ViewModel.ComponentStyle.HelperText"
+    AutoGrow
+    MaxLines="20"
+    Style=@($"--mud-palette-action-default: {ViewModel.ComponentStyle.ComponentColour}; --mud-palette-primary: {ViewModel.ComponentStyle.ComponentColour};")></MudTextField>
 
     @if (IsItemEditable)
     {
@@ -56,6 +57,30 @@ else
 
     [Parameter]
     public bool IsItemEditable { get; set; }
+
+    private AnswerViewModel UserAnswer = new();
+
+    protected override void OnInitialized()
+    {
+        if (UserViewModel != null && UserViewModel.Answers != null)
+        {
+            UserAnswer.QuestionId = ViewModel.Id;
+            UserViewModel.Answers.Add(UserAnswer);
+        }
+    }
+
+    public override bool Validate()
+    {
+        if(string.IsNullOrEmpty(UserAnswer.AnswerText))
+        {
+            return false;
+        }
+        var selectedAnswers = UserViewModel.Answers
+        .Where(answer => answer.QuestionId == ViewModel.Id)
+        .ToList();
+
+        return selectedAnswers.Any() == true;
+    }
 
     private void HandleQuestionEdited(bool edit)
     {

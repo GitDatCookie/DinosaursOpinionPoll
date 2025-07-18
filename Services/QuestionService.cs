@@ -133,7 +133,8 @@ namespace AI_Project.Services
                     .Select(a => new AnswerViewModel
                     {
                         AnswerId = a.AnswerID,
-                        AnswerText = a.Answer
+                        AnswerText = a.Answer,
+                        QuestionId = model.Id 
                     })
                     .ToList()
                 : [];

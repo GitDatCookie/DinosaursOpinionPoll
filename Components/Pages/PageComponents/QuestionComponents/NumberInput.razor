@@ -20,6 +20,7 @@
     {
         <MudNumericField Class="@(ViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
                          T="int"
+                         @bind-Value="IntegerValue"
                          Label="@ViewModel.ComponentStyle.Label"
                          Variant="@ViewModel.ComponentStyle.TextVariant"
                          Placeholder="@ViewModel.ComponentStyle.Placeholder"
@@ -32,6 +33,7 @@
     {
         <MudNumericField Class="@(ViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
                          T="float"
+                         @bind-Value="FloatValue"
                          Label="@ViewModel.ComponentStyle.Label"
                          Variant="@ViewModel.ComponentStyle.TextVariant"
                          Placeholder="@ViewModel.ComponentStyle.Placeholder"
@@ -71,6 +73,42 @@ else
 
     [Parameter]
     public bool IsItemEditable { get; set; }
+
+    private AnswerViewModel UserAnswer = new();
+
+    private int IntegerValue
+    {
+        get => int.TryParse(UserAnswer?.AnswerText, out var val) ? val : 0;
+        set => UserAnswer.AnswerText = value.ToString();
+    }
+
+    private float FloatValue
+    {
+        get => float.TryParse(UserAnswer?.AnswerText, out var val) ? val : 0;
+        set => UserAnswer.AnswerText = value.ToString();
+    }
+
+    protected override void OnInitialized()
+    {
+        if (UserViewModel != null && UserViewModel.Answers != null)
+        {
+            UserAnswer.QuestionId = ViewModel.Id;
+            UserViewModel.Answers.Add(UserAnswer);
+        }
+    }
+
+    public override bool Validate()
+    {
+        if (string.IsNullOrEmpty(UserAnswer.AnswerText))
+        {
+            return false;
+        }
+        var selectedAnswers = UserViewModel.Answers
+        .Where(answer => answer.QuestionId == ViewModel.Id)
+        .ToList();
+
+        return selectedAnswers.Any() == true;
+    }
 
     private void HandleQuestionEdited(bool edit)
     {

@@ -1,18 +1,33 @@
 ﻿@using AI_Project.ViewModels
+@inject ISnackbar snackbar
 
 <MudContainer>
-    @foreach (var item in CurrentPage.Items)
-    {
-        <DynamicComponentComponent ComponentType="@item.componentType"
-                                   QuestionComponentType="@item.questionComponentType"
-                                   ViewModel="@item.viewModelBase"
-                                   IsItemEditable="false" />
-    }
-    <MudButton Disabled="@IsLastPage" OnClick="NextPage">Next</MudButton>
+    <MudGrid>
+
+        @foreach (var item in CurrentPage.Items)
+        {
+            <MudItem xs="12">
+                <ValidateDynamicComponentWrapper @ref="componentRefs[item.viewModelBase.Id]"
+                                                 ComponentType=@item.componentType
+                                                 QuestionComponentType=@item.questionComponentType
+                                                 Parameters="@(new Dictionary<string, object> {{ "ViewModel", item.viewModelBase}, {"IsItemEditable", false}, {"UserViewModel", User}})" />
+            </MudItem>
+
+        }
+
+        <MudItem xs="12" Class="d-flex justify-end mt-6">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Info"
+                       Disabled="@IsLastPage"
+                       OnClick="NextPage">
+                Next
+            </MudButton>
+        </MudItem>
+    </MudGrid>
 </MudContainer>
 
 
-<QuestionairePageTemplate PageViewModel="CurrentPage" />
+@* <QuestionairePageTemplate PageViewModel="CurrentPage" /> *@
 
 @code {
     [Parameter]
@@ -20,6 +35,8 @@
 
     [Parameter]
     public SubjectUserViewModel User { get; set; } = new();
+
+    private Dictionary<Guid, ValidateDynamicComponentWrapper> componentRefs = new();
 
     private int currentPageIndex = 0;
 
@@ -30,11 +47,15 @@
 
     private void NextPage()
     {
-        if (!IsLastPage)
-        {
-            currentPageIndex++;
-        }
-    }
-}
+        bool isValid = componentRefs.Values.All(wrapper => wrapper.Validate());
 
+        if (!isValid)
+        {
+            snackbar.Add("Please answer all required questions.", Severity.Error);
+            return;
+        }
+
+        if (!IsLastPage)
+            currentPageIndex++;
+    }
 }

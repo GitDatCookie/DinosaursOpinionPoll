@@ -54,23 +54,6 @@ else
 
     private int selectedVal = 0;
 
-    private AnswerViewModel _selectedAnswer = new();
-    public AnswerViewModel SelectedAnswer
-    {
-        get => _selectedAnswer;
-        set
-        {
-            if (_selectedAnswer != value)
-            {
-                _selectedAnswer = value;
-                // Use your centralized base method for single selection.
-                UpdateUserSelectionSingle(_selectedAnswer, true);
-                // Optionally force UI refresh.
-                StateHasChanged();
-            }
-        }
-    }
-
     private int RatingValue
     {
         get => selectedVal + 1;
@@ -85,14 +68,42 @@ else
         }
     }
 
-    private int? activeVal;
+    private AnswerViewModel? selectedAnswer;
+    private AnswerViewModel? SelectedAnswer
+    {
+        get => selectedAnswer;
+        set
+        {
+            if (selectedAnswer == value)
+                return;
+
+            selectedAnswer = value;
+
+            if (selectedAnswer != null && UserViewModel != null)
+            {
+                UpdateUserSelectionSingle(selectedAnswer, isSelected: true);
+            }
+        }
+    }
+
+    private int? activeHoverIndex;
+
+    public override bool Validate()
+    {
+        var selectedAnswers = UserViewModel.Answers
+        .Where(answer => answer.QuestionId == ViewModel.Id)
+        .ToList();
+
+        return selectedAnswers.Any() == true;
+    }
+
     private void HandleHoveredValueChanged(int? val)
     {
-        activeVal = val.HasValue ? val.Value - 1 : null;
+        activeHoverIndex = val.HasValue ? val.Value - 1 : null;
     }
 
     private string LabelText =>
-         (activeVal ?? selectedVal) is int idx && idx >= 0 && idx < ViewModel.Answers.Count
+         (activeHoverIndex ?? selectedVal) is int idx && idx >= 0 && idx < ViewModel.Answers.Count
             ? ViewModel.Answers[idx].AnswerText
             : "Rate our product!";
 

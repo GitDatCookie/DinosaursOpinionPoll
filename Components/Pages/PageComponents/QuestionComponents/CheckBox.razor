@@ -14,29 +14,29 @@
     {
         <MudHtmlViewer Html="@ViewModel.Title" />
     }
-        @foreach (var answer in ViewModel.Answers)
-        {
-            <MudCheckBox 
-                onclick="@(() => UpdateUserSelection(answer, !IsAnswerSelected(answer)))"
-                T="bool" 
-                Disabled="false" 
-                Style=@($"--mud-palette-action-default: {ViewModel.ComponentStyle.ComponentColour};")>
-                <MudText T="string">@answer.AnswerText</MudText>
-            </MudCheckBox>
-        }
+    @foreach (var answer in ViewModel.Answers)
+    {
+        <MudCheckBox 
+        onclick="@(() => UpdateUserSelection(answer, !IsAnswerSelected(answer)))"
+        T="bool" 
+        Disabled="false" 
+        Style=@($"--mud-palette-action-default: {ViewModel.ComponentStyle.ComponentColour};")>
+            <MudText T="string">@answer.AnswerText</MudText>
+        </MudCheckBox>
+    }
 
-        @if (IsItemEditable)
-        {
-            <MudGrid Class="d-flex pl-5 mt-6">
-                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteQuestionAsync())">
-                    Delete Question
-                </MudButton>
-                <MudSpacer />
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
-                    Edit Question
-                </MudButton>
-            </MudGrid>
-        }
+    @if (IsItemEditable)
+    {
+        <MudGrid Class="d-flex pl-5 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(()=>DeleteQuestionAsync())">
+                Delete Question
+            </MudButton>
+            <MudSpacer />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(()=>IsEditable=true)" Class="ml-5">
+                Edit Question
+            </MudButton>
+        </MudGrid>
+    }
 
 
 }
@@ -56,19 +56,13 @@ else
     [Parameter]
     public bool IsItemEditable { get; set; }
 
-    [Parameter]
-    public EventCallback<bool> OnValidated { get; set; }
-
-    public bool Validate()
+    public override bool Validate()
     {
-        // Example: ensure at least one answer is selected
-        bool isValid = ViewModel.Answers.Any(a => a.IsSelected); // Adjust based on your model
-        if (!isValid)
-        {
-            snackbar.Add("Please select at least one option.", Severity.Error);
-        }
+            var selectedAnswers = UserViewModel.Answers
+            .Where(answer => answer.QuestionId == ViewModel.Id)
+            .ToList();
 
-        return isValid;
+            return selectedAnswers.Any() == true;
     }
 
     private void HandleQuestionEdited(bool edit)

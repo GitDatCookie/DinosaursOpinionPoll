@@ -5,7 +5,11 @@
 @inject IUserService UserService
 @inject IQuestionaireService QuestionaireService
 
-<DynamicComponentComponent IsItemEditable="false" ItemType="EComponentType.Question" QuestionType="EQuestionComponentType.CheckBox"/>
+@if (IsInitialising == false)
+{
+    <QuestionairePageComponent User="@userViewModel" Questionaire="@questionaire" />
+}
+
 
 @code {
     [Parameter]
@@ -14,10 +18,12 @@
     private QuestionaireViewModel questionaire { get; set; } = new();
     private SubjectUserViewModel userViewModel { get; set; } = new();
 
+    private bool IsInitialising = true;
+
     protected override async Task OnInitializedAsync()
     {
         userViewModel = UserService.CreateSubjectUser();
         questionaire = await QuestionaireService.GetQuestionaireViewModelByTokenAsync(PublicToken, userViewModel.IsTreatmentGroup);
-
+        IsInitialising = false;
     }
 }

@@ -10,12 +10,13 @@
 }
 
 <MudSelect Class="@(ViewModel.ComponentStyle.IsLabelColourised ? "label-custom-color" : "")"
-           T="AnswerViewModel"
-           Label="@ViewModel.ComponentStyle.Label"
-           Variant="@ViewModel.ComponentStyle.TextVariant"
-           Placeholder="@ViewModel.ComponentStyle.Placeholder"
-           HelperText="@ViewModel.ComponentStyle.HelperText"
-           Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")>
+T="AnswerViewModel"
+@bind-Value=@SelectedAnswer
+Label="@ViewModel.ComponentStyle.Label"
+Variant="@ViewModel.ComponentStyle.TextVariant"
+Placeholder="@ViewModel.ComponentStyle.Placeholder"
+HelperText="@ViewModel.ComponentStyle.HelperText"
+Style=@($"--mud-palette-action-default: {ComponentColour}; --mud-palette-primary: {ComponentColour};")>
     @foreach (var answer in ViewModel.Answers)
     {
         <MudSelectItem Value="answer">@answer.AnswerText</MudSelectItem>
@@ -31,6 +32,33 @@
 
     [Parameter]
     public bool IsItemEditable { get; set; }
+
+    private AnswerViewModel? selectedAnswer;
+    private AnswerViewModel? SelectedAnswer
+    {
+        get => selectedAnswer;
+        set
+        {
+            if (selectedAnswer == value)
+                return;
+
+            selectedAnswer = value;
+
+            if (selectedAnswer != null && UserViewModel != null)
+            {
+                UpdateUserSelectionSingle(selectedAnswer, isSelected: true);
+            }
+        }
+    }
+
+    public override bool Validate()
+    {
+        var selectedAnswers = UserViewModel.Answers
+        .Where(answer => answer.QuestionId == ViewModel.Id)
+        .ToList();
+
+        return selectedAnswers.Any() == true;
+    }
 
     private void HandleQuestionEdited(bool edit)
     {

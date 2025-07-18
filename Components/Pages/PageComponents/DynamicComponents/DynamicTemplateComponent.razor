@@ -1,17 +1,17 @@
-﻿<DynamicComponent Type="@GetTemplateType(ItemType,QuestionType)" Parameters="@(new Dictionary<string, object> { { "TemplateViewModel", ViewModel } })" />
+﻿<DynamicComponent Type="@GetTemplateType(ComponentType, QuestionComponentType)" Parameters="@(new Dictionary<string, object> { { "TemplateViewModel", ViewModel } })" />
 
 @code {
-    [Parameter] public EComponentType ItemType{ get; set; }
+    [Parameter] public EComponentType ComponentType{ get; set; }
 
-    [Parameter] public EQuestionComponentType QuestionType { get; set; }
+    [Parameter] public EQuestionComponentType QuestionComponentType { get; set; }
 
     [Parameter] public QuestionaireComponentViewModelBase ViewModel { get; set; } = null!;
 
-    private Type GetTemplateType(EComponentType itemType, EQuestionComponentType questionType)
+    private Type GetTemplateType(EComponentType componentType, EQuestionComponentType questionComponentType)
     {
-        return itemType switch
+        return componentType switch
         {
-            EComponentType.Question => questionType switch
+            EComponentType.Question => questionComponentType switch
             {
                 EQuestionComponentType.CheckBox => typeof(CheckBoxTemplate),
                 EQuestionComponentType.RadioButton => typeof(RadioButtonsTemplate),
@@ -21,12 +21,12 @@
                 EQuestionComponentType.MultiLine => typeof(MultiLineInputTemplate),
                 EQuestionComponentType.DropDown => typeof(DropDownTemplate),
                 EQuestionComponentType.Number => typeof(NumberInputTemplate),
-                _ => throw new NotSupportedException($"Unsupported question type: {questionType}")
+                _ => throw new NotSupportedException($"Unsupported question type: {questionComponentType}")
             },
             EComponentType.FreeText => typeof(FreeTextTemplate),
             EComponentType.Image => typeof(ImageTemplate),
             EComponentType.Video => typeof(VideoTemplate),
-            _ => throw new NotSupportedException($"Unsupported item type: {itemType}")
+            _ => throw new NotSupportedException($"Unsupported item type: {componentType}")
         };
     }
 }

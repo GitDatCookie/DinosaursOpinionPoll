@@ -1,5 +1,6 @@
 ﻿using AI_Project.Components.Pages.PageComponents.DialogueComponents;
 using AI_Project.Enums;
+using AI_Project.Helpers;
 using AI_Project.Services.Interfaces;
 using AI_Project.ViewModels;
 using AI_Project.ViewModels.QuestionaireComponentViewModels;
@@ -12,7 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace AI_Project.Components.Pages.PageComponents
 {
-    public class QuestionaireComponentBase : ComponentBase
+    public class QuestionaireComponentBase : ComponentBase, IValidateComponent
     {
         [Inject] protected IDialogService DialogService { get; set; } = null!;
         [Inject] protected ISnackbar Snackbar { get; set; } = null!;
@@ -39,6 +40,8 @@ namespace AI_Project.Components.Pages.PageComponents
         public int? EditIndex { get; set; } = null;
         public bool IsRichText { get; set; } = false;
         public bool IsLabel { get; set; } = false;
+
+        public virtual bool Validate() => true;
 
         protected void FinishEditing()
         {

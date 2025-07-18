@@ -1,7 +1,7 @@
 ﻿<DynamicComponent 
 @key=ViewModel.Id
-                  Type="@GetComponentType(ComponentType,QuestionComponentType)"
-                  Parameters="@(new Dictionary<string, object> { { "ViewModel", ViewModel }, {"IsItemEditable", IsItemEditable}, {"UserViewModel", UserViewModel} })" />
+Type="@GetComponentType(ComponentType,QuestionComponentType)"
+Parameters="@(new Dictionary<string, object> { { "ViewModel", ViewModel }, {"IsItemEditable", IsItemEditable}, {"UserViewModel", UserViewModel}})" />
 
 @code {
     [Parameter] public EComponentType ComponentType{ get; set; }
@@ -10,16 +10,17 @@
 
     [Parameter] public QuestionaireComponentViewModelBase ViewModel { get; set; } = null!;
 
-    [Parameter] public SubjectUserViewModel? UserViewModel { get; set; } = null!;
+    [Parameter] public SubjectUserViewModel? UserViewModel { get; set; }
 
     [Parameter] public bool IsItemEditable { get; set; } = false;
+    [Parameter] public EventCallback<(bool, List<AnswerViewModel>?)> OnValidated { get; set; }
 
 
-    private Type GetComponentType(EComponentType itemType, EQuestionComponentType questionType)
+    private Type GetComponentType(EComponentType componentType, EQuestionComponentType questionComponentType)
     {
-        return itemType switch
+        return componentType switch
         {
-            EComponentType.Question => questionType switch
+            EComponentType.Question => questionComponentType switch
             {
                 EQuestionComponentType.CheckBox => typeof(CheckBox),
                 EQuestionComponentType.RadioButton => typeof(RadioButtons),
@@ -29,12 +30,12 @@
                 EQuestionComponentType.MultiLine => typeof(MultiLineInput),
                 EQuestionComponentType.DropDown => typeof(DropDown),
                 EQuestionComponentType.Number => typeof(NumberInput),
-                _ => throw new NotSupportedException($"Unsupported question type: {questionType}")
+                _ => throw new NotSupportedException($"Unsupported question type: {questionComponentType}")
             },
             EComponentType.FreeText => typeof(FreeText),
             EComponentType.Image => typeof(Image),
             EComponentType.Video => typeof(Video),
-            _ => throw new NotSupportedException($"Unsupported item type: {itemType}")
+            _ => throw new NotSupportedException($"Unsupported item type: {componentType}")
         };
     }
 }

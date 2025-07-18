@@ -13,14 +13,14 @@
     @if(renderItem)
     {
         <DynamicComponentComponent 
-        ItemType="@returnItem.Item2" 
-        QuestionType="@returnItem.Item3" 
+        ComponentType="@returnItem.Item2" 
+        QuestionComponentType="@returnItem.Item3" 
         ViewModel="@returnItem.Item1"
         IsItemEditable="true" />
     }
     @if(renderTemplate)
     {
-        <DynamicTemplateComponent ItemType="returnTemplate.ItemType" QuestionType="returnTemplate.QuestionType"/>
+        <DynamicTemplateComponent ComponentType="returnTemplate.ItemType" QuestionComponentType="returnTemplate.QuestionType"/>
     }
 </MudContainer>
 @code {
